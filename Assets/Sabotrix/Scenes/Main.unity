@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 1291295221}
   - component: {fileID: 1291295220}
   m_Layer: 0
-  m_Name: Match
+  m_Name: Game
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -148,10 +148,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51da1a1d878fe42b996fd789c2436677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.MatchController
-  _heroOne: {fileID: 11400000, guid: a3b7b9ed8a6ef41d292c616a2123c6fb, type: 2}
-  _deckOne: {fileID: 11400000, guid: a90f1cd26347d476883f0032e07db3e8, type: 2}
-  _heroTwo: {fileID: 11400000, guid: dfee7634766404aa08c415036f9786d2, type: 2}
-  _deckTwo: {fileID: 11400000, guid: f848897814cbc412989659496490d180, type: 2}
+  _heroes:
+  - {fileID: 11400000, guid: a3b7b9ed8a6ef41d292c616a2123c6fb, type: 2}
+  - {fileID: 11400000, guid: dfee7634766404aa08c415036f9786d2, type: 2}
+  _decks:
+  - {fileID: 11400000, guid: a90f1cd26347d476883f0032e07db3e8, type: 2}
+  - {fileID: 11400000, guid: f848897814cbc412989659496490d180, type: 2}
   _seed: 0
 --- !u!4 &1291295221
 Transform:
