@@ -13,7 +13,7 @@
 | Slice | Status | Commit |
 |:--|:--|:--|
 | M2.0 Bar blockout | Built. Waiting on Malcolm's layout check. | |
-| M2.1 Seats and cameras | Not started | |
+| M2.1 Seats and cameras | Done. Seat swaps are a hard cut (a blend flies through the table). | |
 | M2.2 Seated patrons | Not started | |
 | M2.3 Resolve show | Not started | |
 | Playtest 3 | Not started | |

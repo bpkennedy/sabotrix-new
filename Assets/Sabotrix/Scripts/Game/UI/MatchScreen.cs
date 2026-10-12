@@ -6,8 +6,9 @@ using UnityEngine.UI;
 
 namespace Sabotrix.Game.UI
 {
-    // Gray-box match screen, built entirely from code with uGUI.
-    // Top: opponent. Middle: turn status and resolve log. Bottom: the active player's hand and buttons.
+    // Gray-box match screen, built entirely from code with uGUI. It sits over the 3D bar.
+    // Top: opponent. Middle: turn status (left) and resolve log (right), with the bar showing between them.
+    // Bottom: the active player's hand and buttons.
     public sealed class MatchScreen : MonoBehaviour
     {
         private const int CardWidth = 200;
@@ -15,6 +16,11 @@ namespace Sabotrix.Game.UI
         private const int CardBackWidth = 60;
         private const int CardBackHeight = 84;
         private const float UnplayableAlpha = 0.35f;
+        private const int StatusPanelWidth = 420;
+        private const int LogPanelWidth = 520;
+
+        // See-through so the bar shows behind the HUD.
+        private static readonly Color OverlayColor = new Color(0f, 0f, 0f, 0.55f);
 
         private static readonly Color AttackColor = new Color(0.7f, 0.25f, 0.25f);
         private static readonly Color SabotageColor = new Color(0.8f, 0.65f, 0.1f);
@@ -38,6 +44,7 @@ namespace Sabotrix.Game.UI
         {
             GameObject root = new GameObject();
             RectTransform background = UiBuilder.CreateCanvas("MatchScreen", root);
+            background.GetComponent<Image>().enabled = false;
             MatchScreen screen = root.AddComponent<MatchScreen>();
             screen.Build(background);
             return screen;
@@ -107,22 +114,27 @@ namespace Sabotrix.Game.UI
 
             // Opponent row
             Transform opponentRow = UiBuilder.AddRow("Opponent", background, 160, vertical: true);
+            opponentRow.gameObject.AddComponent<Image>().color = OverlayColor;
             _opponentStats = UiBuilder.AddText("OpponentStats", opponentRow, 28, TextAnchor.MiddleLeft, 40);
             _opponentHand = UiBuilder.AddRow("OpponentHand", opponentRow, CardBackHeight, vertical: false);
 
-            // Middle row: status on the left, log on the right
+            // Middle row: status on the left, log on the right, an empty gap in between to see the bar
             Transform middleRow = UiBuilder.AddRow("Middle", background, 0, vertical: false, flexible: true);
-            Image statusPanel = UiBuilder.AddImage("StatusPanel", middleRow, UiBuilder.PanelColor);
-            UiBuilder.Flexible(statusPanel.gameObject, 1);
-            _status = UiBuilder.AddText("Status", statusPanel.transform, 32, TextAnchor.MiddleCenter, 0);
+            Image statusPanel = UiBuilder.AddImage("StatusPanel", middleRow, OverlayColor);
+            statusPanel.gameObject.AddComponent<LayoutElement>().preferredWidth = StatusPanelWidth;
+            _status = UiBuilder.AddText("Status", statusPanel.transform, 28, TextAnchor.MiddleCenter, 0);
             UiBuilder.Stretch(_status.rectTransform, 16);
-            Image logPanel = UiBuilder.AddImage("LogPanel", middleRow, UiBuilder.PanelColor);
-            UiBuilder.Flexible(logPanel.gameObject, 1);
+            GameObject gap = new GameObject("Gap", typeof(RectTransform));
+            gap.transform.SetParent(middleRow, false);
+            UiBuilder.Flexible(gap, 1);
+            Image logPanel = UiBuilder.AddImage("LogPanel", middleRow, OverlayColor);
+            logPanel.gameObject.AddComponent<LayoutElement>().preferredWidth = LogPanelWidth;
             _log = UiBuilder.AddText("Log", logPanel.transform, 22, TextAnchor.LowerLeft, 0);
             UiBuilder.Stretch(_log.rectTransform, 16);
 
             // Player row
             Transform playerRow = UiBuilder.AddRow("Player", background, 340, vertical: true);
+            playerRow.gameObject.AddComponent<Image>().color = OverlayColor;
             _playerStats = UiBuilder.AddText("PlayerStats", playerRow, 28, TextAnchor.MiddleLeft, 40);
             Transform cardsRow = UiBuilder.AddRow("Cards", playerRow, CardHeight, vertical: false);
             _slots = UiBuilder.AddRow("Slots", cardsRow, CardHeight, vertical: false);

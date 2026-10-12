@@ -3,7 +3,8 @@
     "rootNamespace": "Sabotrix.Editor",
     "references": [
         "Sabotrix.Core",
-        "Sabotrix.Game"
+        "Sabotrix.Game",
+        "Unity.Cinemachine"
     ],
     "includePlatforms": [
         "Editor"

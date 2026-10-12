@@ -25,6 +25,9 @@ namespace Sabotrix.Game
         [Tooltip("0 = different shuffle every match. Any other number replays the same shuffle and backfire rolls.")]
         [SerializeField] private int _seed;
 
+        [Tooltip("The CameraDirector on the Bar. Picks the seat camera for each turn.")]
+        [SerializeField] private CameraDirector _cameras;
+
         // Setup picks per player, as indexes into _heroes and _decks.
         private readonly int[] _heroPicks = { 0, 1 };
         private readonly int[] _deckPicks = { 0, 1 };
@@ -98,9 +101,11 @@ namespace Sabotrix.Game
         }
 
         // Hides the hands between turns so the next player can take the seat without peeking.
+        // Meanwhile the camera moves to the next player's seat behind the handoff screen.
         private void ShowHandoff(string body)
         {
             _matchScreen.Hide();
+            _cameras.Show(CameraDirector.SeatName(_match.ActivePlayerIndex));
             _menu.Show($"PASS TO {MatchText.PlayerName(_match, _match.ActivePlayer).ToUpperInvariant()}", body, new[]
             {
                 new MenuButton("READY", ShowMatch)

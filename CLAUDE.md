@@ -41,7 +41,7 @@ Also useful:
 - `manage_scriptable_object`: create/modify data assets with patches like `{"propertyPath": "_cost", "op": "set", "value": 2}`. Enums are set by index. Object references use `"ref": {"guid": "..."}`. List entries can be set directly (`_cards.Array.data[3].Card`); setting `Array.size` is not supported but lists grow automatically.
 - `manage_scene`, `manage_gameobject`, `manage_components`: build and wire scenes. Save with `manage_scene` `save`.
 - `manage_editor` `play`/`stop` + `manage_camera` `screenshot` (with `include_image`, `output_folder: Temp/Screenshots`): check the game visually.
-- `execute_code`: drive the running game, e.g. invoke a UI button's `onClick`, or call `GameController` methods through reflection to auto-play a match. Use `UnityEngine.Object` explicitly (plain `Object` is ambiguous).
+- `execute_code`: drive the running game, e.g. invoke a UI button's `onClick`, or call `GameController` methods through reflection to auto-play a match. Use `UnityEngine.Object` explicitly (plain `Object` is ambiguous). Play mode stops ticking when the editor isn't focused: set `Application.runInBackground = true` first so time, blends, and coroutines advance.
 - `manage_build` `build` with `target: windows64`: Windows build while the editor stays open. Wait for `Build Finished, Result` in `~/Library/Logs/Unity/Editor.log`.
 
 All `mcp__UnityMCP` tools are pre-approved in `.claude/settings.local.json`.
@@ -73,12 +73,14 @@ Assets/Sabotrix/
                      Match (rules + turn flow), PlayerState, CardDefinition, Rules (constants), MatchEvent
   Scripts/Game/      MonoBehaviours, UI, presentation. Assembly Sabotrix.Game
                      GameController (Title -> Setup -> Handoff/Match -> Results)
+                     CameraDirector (on the Bar): switches Cinemachine cameras by name
     Data/            CardData, HeroData, DeckData ScriptableObject types
     UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
   Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor
                      BarBlockoutBuilder (menu Sabotrix → Build Bar Blockout)
   Data/              ScriptableObject assets: Cards/, Heroes/, Decks/
   Prefabs/Bar.prefab The bar room. Props named for lookup (LightBox, Seat_P1, ...)
+                     Cinemachine cameras: Seat_P1, Seat_P2, Overhead, Cutaway_LightBox
   Art/Blockout/      Flat-color materials for the bar blockout
   Scenes/Main.unity  The only scene (camera, Bar, TempLight, Game object with GameController)
   Tests/EditMode/    Assembly Sabotrix.Tests.EditMode. TestContent mirrors GDD Section 10.

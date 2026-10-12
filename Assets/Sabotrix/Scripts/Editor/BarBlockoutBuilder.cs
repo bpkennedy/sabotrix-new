@@ -1,4 +1,6 @@
 using System.IO;
+using Sabotrix.Game;
+using Unity.Cinemachine;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,6 +25,8 @@ namespace Sabotrix.Editor
         private const float SeatedEyeHeight = 1.2f;
         private const float SeatDistance = 0.85f;
         private const int HazardStripes = 10;
+        private const float SeatCameraTilt = 20f;
+        private const float CameraFieldOfView = 60f;
 
         [MenuItem("Sabotrix/Build Bar Blockout")]
         public static void Build()
@@ -39,6 +43,8 @@ namespace Sabotrix.Editor
             BuildLightBox(root.transform);
             BuildBeholder(root.transform);
             BuildWallProps(root.transform);
+            BuildCameras(root.transform);
+            root.AddComponent<CameraDirector>();
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
@@ -92,10 +98,11 @@ namespace Sabotrix.Editor
             Box("Back", chairRoot, new Vector3(0, 0.72f, -0.22f), new Vector3(0.45f, 0.5f, 0.05f), chair);
             Box("Base", chairRoot, new Vector3(0, 0.22f, 0), new Vector3(0.08f, 0.44f, 0.08f), chair);
 
-            // Where the seated player's eyes are. The first-person camera goes here in M2.1.
+            // The seated player's eyes, tilted down toward the table. This is the first-person camera.
             Transform seat = Group($"Seat_P{player}", parent);
             seat.localPosition = new Vector3(0, SeatedEyeHeight, side * SeatDistance);
-            seat.localEulerAngles = new Vector3(0, facing, 0);
+            seat.localEulerAngles = new Vector3(SeatCameraTilt, facing, 0);
+            AddCamera(seat);
 
             // Drink on the table, to this player's right.
             Cylinder($"Drink_P{player}", parent, new Vector3(-side * 0.4f, TableHeight + 0.1f, side * 0.35f), new Vector3(0.08f, 0.075f, 0.08f),
@@ -166,6 +173,28 @@ namespace Sabotrix.Editor
                 float x = -stepWidth / 2 + stripeWidth * (i + 0.5f);
                 Box($"Stripe_{i + 1}", step, new Vector3(x, 0.152f, 0.32f), new Vector3(stripeWidth, 0.01f, 0.16f), i % 2 == 0 ? yellow : black);
             }
+        }
+
+        // The seat cameras are built with the chairs. These are the other views.
+        private static void BuildCameras(Transform parent)
+        {
+            // Straight down at the table, below the light box. Player 1 is at the bottom of the screen.
+            Transform overhead = Group(CameraDirector.Overhead, parent);
+            overhead.localPosition = new Vector3(0, 2.1f, 0);
+            overhead.localEulerAngles = new Vector3(90, 0, 0);
+            AddCamera(overhead);
+
+            // Blackout cuts here to watch the light box smash.
+            Transform cutaway = Group("Cutaway_LightBox", parent);
+            cutaway.localPosition = new Vector3(1.6f, 1.5f, -1.6f);
+            cutaway.localRotation = Quaternion.LookRotation(new Vector3(0, 2.4f, 0) - cutaway.localPosition);
+            AddCamera(cutaway);
+        }
+
+        private static void AddCamera(Transform target)
+        {
+            CinemachineCamera cinemachineCamera = target.gameObject.AddComponent<CinemachineCamera>();
+            cinemachineCamera.Lens.FieldOfView = CameraFieldOfView;
         }
 
         private static Transform Group(string name, Transform parent)
