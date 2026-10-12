@@ -170,7 +170,7 @@ Match start
 
 **2. Choose Phase** (first-person camera)
 
-Select cards to play in this order:
+Select cards in any order. They always play out in this order:
 
 | Step | Card | Rule |
 |:--|:--|:--|

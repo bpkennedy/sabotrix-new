@@ -10,25 +10,74 @@ namespace Sabotrix.Core
         private readonly List<CardInstance> _selected = new List<CardInstance>();
 
         public HeroDefinition Hero { get; }
-        public int Hp { get; private set; }
-        public int Block { get; private set; }
-        public int Energy { get; private set; }
-        public int SpecialEnergy { get; private set; }
-        public int SabotagesPlayed { get; private set; }
+        public int Hp { get; internal set; }
+        public int Block { get; internal set; }
+        public int Energy { get; internal set; }
+        public int SpecialEnergy { get; internal set; }
+        public int SabotagesPlayed { get; internal set; }
+
+        // Ability and Basic Attack live in their own slots, never in the deck or hand.
+        public CardInstance Ability { get; }
+        public CardInstance BasicAttack { get; }
 
         // Index 0 is the top of the deck.
         public IReadOnlyList<CardInstance> Deck => _deck;
+
+        // Selected cards stay in the hand until the turn resolves.
         public IReadOnlyList<CardInstance> Hand => _hand;
 
-        // Cards chosen this turn, in play order.
+        // Cards chosen this turn, in the order they were selected.
         public IReadOnlyList<CardInstance> Selected => _selected;
 
-        internal PlayerState(HeroDefinition hero, IEnumerable<CardInstance> deck)
+        internal PlayerState(HeroDefinition hero, IEnumerable<CardInstance> deck, CardInstance ability, CardInstance basicAttack)
         {
             Hero = hero;
             Hp = hero.MaxHp;
             Energy = hero.EnergyMax;
+            Ability = ability;
+            BasicAttack = basicAttack;
             _deck = new List<CardInstance>(deck);
+        }
+
+        public bool IsSelected(CardInstance card) => _selected.Contains(card);
+
+        // Fisher-Yates shuffle.
+        internal void ShuffleDeck(IRandom random)
+        {
+            for (int i = _deck.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+                (_deck[i], _deck[j]) = (_deck[j], _deck[i]);
+            }
+        }
+
+        internal void DrawCard()
+        {
+            if (_deck.Count == 0)
+            {
+                return;
+            }
+
+            _hand.Add(_deck[0]);
+            _deck.RemoveAt(0);
+        }
+
+        internal void Select(CardInstance card) => _selected.Add(card);
+
+        internal void Unselect(CardInstance card) => _selected.Remove(card);
+
+        // Moves played hand cards to the bottom of the deck, in the given order, and clears the selection.
+        internal void CyclePlayedCards(IEnumerable<CardInstance> playedInOrder)
+        {
+            foreach (CardInstance card in playedInOrder)
+            {
+                if (_hand.Remove(card))
+                {
+                    _deck.Add(card);
+                }
+            }
+
+            _selected.Clear();
         }
     }
 }

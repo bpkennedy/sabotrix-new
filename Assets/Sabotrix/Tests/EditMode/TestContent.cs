@@ -48,5 +48,40 @@ namespace Sabotrix.Tests.EditMode
         });
 
         public static IEnumerable<CardDefinition> Copies(CardDefinition card, int count) => Enumerable.Repeat(card, count);
+
+        public static DeckDefinition Deck(params CardDefinition[] cards) => new DeckDefinition("Test", cards);
+
+        public static DeckDefinition Deck(IEnumerable<CardDefinition> cards) => new DeckDefinition("Test", cards);
+
+        public static HeroDefinition Hero(
+            string id,
+            int maxHp = 100,
+            int strength = 0,
+            int initiative = 0,
+            int energyMax = 6,
+            int energyRegen = 3) => new HeroDefinition(
+                id, id, HeroClass.Fighter,
+                maxHp, strength, initiative, energyMax, energyRegen, specialEnergyGain: 1,
+                ability: Haymaker);
+
+        // Bonk (Initiative 5) goes first. Decks stay in listed order:
+        // Bonk's hand is Jab, Jab, Swing, Swing, Body Slam + Body Slam drawn on turn 1.
+        // Pudge's hand is Jab, Jab, Poke, Swing, Counter Stance.
+        public static Match BonkVsPudge() =>
+            Match.Create(Bonk, BrawlerDeck(), Pudge, BunkerDeck(), new IdentityRandom());
+
+        public static Match CreateMatch(HeroDefinition heroOne, DeckDefinition deckOne, HeroDefinition heroTwo, DeckDefinition deckTwo) =>
+            Match.Create(heroOne, deckOne, heroTwo, deckTwo, new IdentityRandom());
+
+        // Selects the first affordable Attack card in hand (or Basic Attack), then ends the turn.
+        public static void PlayAnyAttack(Match match)
+        {
+            PlayerState player = match.ActivePlayer;
+            CardInstance attack = player.Hand.FirstOrDefault(card =>
+                card.Definition.Type == CardType.Attack && match.CanSelect(card)) ?? player.BasicAttack;
+
+            match.TrySelect(attack);
+            match.EndTurn();
+        }
     }
 }
