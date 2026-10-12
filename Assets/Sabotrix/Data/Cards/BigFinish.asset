@@ -18,7 +18,7 @@ MonoBehaviour:
   _damage: 20
   _hits: 1
   _finisherBonus: 10
-  _finisherHpThreshold: 50
+  _finisherHpThreshold: 25
   _bonusSpecialEnergy: 0
   _block: 0
   _heal: 0

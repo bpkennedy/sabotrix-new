@@ -18,7 +18,7 @@ namespace Sabotrix.Tests.EditMode
         public static readonly CardDefinition DoubleTap = new CardDefinition("double-tap", "Double Tap", CardType.Attack, 2, damage: 8, hits: 2);
         public static readonly CardDefinition SecondWind = new CardDefinition("second-wind", "Second Wind", CardType.Attack, 2, damage: 10, heal: 8);
         public static readonly CardDefinition BodySlam = new CardDefinition("body-slam", "Body Slam", CardType.Attack, 3, damage: 25);
-        public static readonly CardDefinition BigFinish = new CardDefinition("big-finish", "Big Finish", CardType.Attack, 3, damage: 20, finisherBonus: 10, finisherHpThreshold: 50);
+        public static readonly CardDefinition BigFinish = new CardDefinition("big-finish", "Big Finish", CardType.Attack, 3, damage: 20, finisherBonus: 10, finisherHpThreshold: 25);
 
         public static readonly CardDefinition Blackout = new CardDefinition("blackout", "Blackout", CardType.Sabotage, 2,
             sabotage: SabotageKind.Blind, reversalChance: 0.35);
@@ -31,12 +31,12 @@ namespace Sabotrix.Tests.EditMode
 
         public static readonly HeroDefinition Bonk = new HeroDefinition(
             "bonk", "Bonk", HeroClass.Fighter,
-            maxHp: 160, strength: 3, initiative: 5, energyMax: 6, energyRegen: 3, specialEnergyGain: 1,
+            maxHp: 80, strength: 3, initiative: 5, energyMax: 6, energyRegen: 3, specialEnergyGain: 1,
             ability: Haymaker);
 
         public static readonly HeroDefinition Pudge = new HeroDefinition(
             "pudge", "Pudge", HeroClass.Tank,
-            maxHp: 220, strength: 0, initiative: 2, energyMax: 6, energyRegen: 3, specialEnergyGain: 1,
+            maxHp: 110, strength: 0, initiative: 2, energyMax: 6, energyRegen: 3, specialEnergyGain: 1,
             ability: PotLidGuard);
 
         public static DeckDefinition BrawlerDeck() => new DeckDefinition("Brawler", new[]

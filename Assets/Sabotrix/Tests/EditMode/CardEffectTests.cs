@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using Sabotrix.Core;
 
@@ -138,26 +139,31 @@ namespace Sabotrix.Tests.EditMode
         [Test]
         public void BigFinish_OpponentAtThreshold_AddsTenDamage()
         {
+            // Block keeps the target alive so the extra damage shows: 30 damage - 10 Block = 20 HP lost.
             Match match = TestContent.PlayerHolding(TestContent.BigFinish);
-            match.Opponent.Hp = 50;
+            match.Opponent.Hp = 25;
+            match.Opponent.Block = 10;
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
             match.EndTurn();
 
-            Assert.That(match.Players[1].Hp, Is.EqualTo(50 - 30));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(25 - 20));
         }
 
         [Test]
         public void BigFinish_EarlierAttackReachesThreshold_AddsTenDamage()
         {
+            // Jab takes 35 HP down to 25, so Big Finish hits for 30 and knocks out the last 25.
+            // Without the bonus it would deal only 20.
             Match match = TestContent.PlayerHolding(TestContent.Jab, TestContent.BigFinish);
-            match.Opponent.Hp = 60;
+            match.Opponent.Hp = 35;
             match.TrySelect(match.ActivePlayer.Hand[0]);
             match.TrySelect(match.ActivePlayer.Hand[1]);
 
             match.EndTurn();
 
-            Assert.That(match.Players[1].Hp, Is.EqualTo(60 - 10 - 30));
+            Assert.That(match.LastTurnEvents.Last(e => e.Kind == MatchEventKind.Damage).Amount, Is.EqualTo(25));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(0));
         }
     }
 }

@@ -36,7 +36,7 @@ Each slice ends compiled, tested, and committed.
 - Choose phase: select with ordering rules, reserve Energy, withdraw with refund, Basic Attack only when no Attack is affordable, End Turn only when legal.
 - Resolve phase: Ability → Attacks → Sabotage. Match ends the moment HP hits 0.
 - End of turn: played cards go to the bottom of the deck.
-- Win conditions: HP 0, forfeit, 30-turn limit (higher HP wins, tie = draw).
+- Win conditions: HP 0, forfeit, 16-turn limit (higher HP wins, tie = draw).
 - Dead Sabotage cards after 3 played.
 
 **Done when:** EditMode tests cover every rule above.
@@ -88,7 +88,7 @@ Each slice ends compiled, tested, and committed.
 **Done when:** a full match plays on the Windows PC.
 
 **▶ Playtest 2 (Malcolm + Brian):** play 5+ matches. Check:
-- Do matches land around 6–9 turns per player and about 5 minutes?
+- Do matches land around 3–5 turns per player and about 2–3 minutes?
 - Do dead Sabotage cards feel bad in long matches? (GDD open question 2)
 - Is Sabotage fun to gamble on? Are backfires annoying-but-funny?
 - Which numbers need tuning?
@@ -109,7 +109,7 @@ All proposed defaults accepted on 2026-10-11 and added to GDD Section 7.8.
 | 6 | **Blackout:** when playing blind and you pick a card you can't afford or that breaks ordering rules, what happens? | The card is revealed for a moment and returns to your hand. No penalty. |
 | 7 | **Spilled Drink:** does +1 cost apply to Basic Attack (cost 0)? | No. Only Attack cards. |
 | 8 | **Big Finish:** checks opponent HP before or after earlier Attacks this turn? | At the moment Big Finish resolves (after earlier Attacks). |
-| 9 | Turn limit "30 total turns": each player's turn counts as 1? | Yes. 15 turns each. |
+| 9 | Turn limit: each player's turn counts as 1? | Yes. 16 total (changed from 30 after Playtest 1), 8 each. |
 
 ## Decisions Made for M1
 

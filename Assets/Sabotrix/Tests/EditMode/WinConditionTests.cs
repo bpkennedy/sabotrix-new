@@ -66,7 +66,7 @@ namespace Sabotrix.Tests.EditMode
 
             Assert.That(match.IsOver, Is.True);
             Assert.That(match.Winner, Is.Null);
-            Assert.That(match.Players[0].Hp, Is.EqualTo(1000 - 15 * 10));
+            Assert.That(match.Players[0].Hp, Is.EqualTo(1000 - Rules.TurnLimit / 2 * 10));
         }
 
         [Test]

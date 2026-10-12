@@ -34,7 +34,7 @@ Turn-based 1v1 card battler with deck building.
 
 - "I can't believe that backfired!" moments that both players laugh at.
 - Planning a turn feels like a puzzle: what order, how much energy, risk the sabotage or not.
-- Matches are short, about 5 minutes.
+- Matches are short, about 2–3 minutes.
 
 ---
 
@@ -251,7 +251,7 @@ Reversal effects must be:
 |:--|:--|
 | Opponent's HP reaches 0 | You win |
 | Opponent forfeits | You win |
-| 30 total turns played (15 each) **[DEFAULT]** | Higher HP wins. Tie = draw. |
+| 16 total turns played (8 each) **[DEFAULT]** | Higher HP wins. Tie = draw. |
 
 ### 7.8 Rule Details
 
@@ -267,7 +267,7 @@ Reversal effects must be:
 | **Short Circuit** | Opponent loses 2 Energy at the start of their next turn (after Regen). The player who played it gains 2 Energy at the start of their own next turn (up to Max). |
 | **Spilled Drink** | The +1 cost applies to Attack cards only, not Basic Attack. |
 | **Blackout (blind play)** | If a blind pick can't be afforded or breaks ordering rules, the card is revealed briefly and returns to the hand. No penalty. |
-| **Turn limit** | Each player's turn counts as 1. 30 total = 15 each. |
+| **Turn limit** | Each player's turn counts as 1. 16 total = 8 each. |
 
 ### 7.9 Removed for MVP
 
@@ -320,7 +320,7 @@ For MVP, players choose from **prebuilt decks**. Collection and deck building co
 
 ## 10. Starter Content (MVP)
 
-Heroes (10.1) are approved. Cards and all numbers are starting values to tune through playtesting. Numbers target a match of roughly 6–9 turns per player.
+Heroes (10.1) are approved. Cards and all numbers are starting values to tune through playtesting. Numbers target a match of roughly 3–5 turns per player.
 
 ### 10.1 Heroes
 
@@ -329,7 +329,7 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 | **Class** | Fighter | Tank |
 | **Look** | Pastel orange round head, determined grin, stubby arms with oversized boxing gloves | Mint green, extra-round body, sleepy happy face |
 | **Accessory** | Red sweatband | Saucepan worn as a helmet |
-| **HP** | 160 | 220 |
+| **HP** | 80 | 110 |
 | **Strength** | 3 | 0 |
 | **Initiative** | 5 | 2 |
 | **Energy Max / Regen** | 6 / 3 | 6 / 3 |
@@ -353,7 +353,7 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 | **Double Tap** | 2 | 8 ×2 | Hits twice (each hit earns Special Energy, Strength applies to each hit) |
 | **Second Wind** | 2 | 10 | Heal 8 HP |
 | **Body Slam** | 3 | 25 | — |
-| **Big Finish** | 3 | 20 | +10 damage if opponent has 50 HP or less |
+| **Big Finish** | 3 | 20 | +10 damage if opponent has 25 HP or less |
 
 ### 10.4 Sabotage Cards
 

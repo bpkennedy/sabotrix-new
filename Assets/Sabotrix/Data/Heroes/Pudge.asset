@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.Data.HeroData
   _displayName: Pudge
   _class: 1
-  _maxHp: 220
+  _maxHp: 110
   _strength: 0
   _initiative: 2
   _energyMax: 6

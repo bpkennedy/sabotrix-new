@@ -21,9 +21,9 @@ namespace Sabotrix.Tests.EditMode
         {
             Match match = TestContent.BonkVsPudge();
 
-            Assert.That(match.Players[0].Hp, Is.EqualTo(160));
+            Assert.That(match.Players[0].Hp, Is.EqualTo(80));
             Assert.That(match.Players[0].Energy, Is.EqualTo(6));
-            Assert.That(match.Players[1].Hp, Is.EqualTo(220));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(110));
             Assert.That(match.Players[1].Energy, Is.EqualTo(6));
         }
 

@@ -14,7 +14,7 @@ namespace Sabotrix.Tests.EditMode
 
             match.EndTurn();
 
-            Assert.That(match.Players[1].Hp, Is.EqualTo(220 - 13));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(110 - 13));
         }
 
         [Test]
@@ -43,7 +43,7 @@ namespace Sabotrix.Tests.EditMode
 
             match.EndTurn();
 
-            Assert.That(match.Players[1].Hp, Is.EqualTo(220 - 5));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(110 - 5));
             Assert.That(bonk.Deck.Count, Is.EqualTo(deckCount));
         }
 

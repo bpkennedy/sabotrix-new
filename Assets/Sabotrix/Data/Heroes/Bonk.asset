@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.Data.HeroData
   _displayName: Bonk
   _class: 0
-  _maxHp: 160
+  _maxHp: 80
   _strength: 3
   _initiative: 5
   _energyMax: 6
