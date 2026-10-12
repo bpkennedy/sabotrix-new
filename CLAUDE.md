@@ -28,7 +28,17 @@ Turn-based 1v1 card battler set in a nerd bar, where Sabotage cards mess with th
 | UI | uGUI |
 | Build target | Windows 64-bit (Mono), built from the Mac |
 
-## Unity CLI
+## Unity MCP (editor open)
+
+When the editor is open, use the `unityMCP` tools ([MCP for Unity](https://github.com/CoplayDev/unity-mcp), pinned in `Packages/manifest.json`) instead of batch mode:
+
+- `refresh_unity`: import assets and compile scripts
+- `read_console`: check for compile errors and logs
+- `run_tests` + `get_test_job`: run EditMode tests (enable the `testing` group with `manage_tools` if needed)
+
+The server runs inside the editor (HTTP, `127.0.0.1:8080`). Start it from **Window → MCP for Unity**. Each machine registers it with Claude Code once, through that window's client setup or with `claude mcp add --scope local --transport http UnityMCP http://127.0.0.1:8080/mcp`.
+
+## Unity CLI (editor closed)
 
 **Only one Unity process can open the project at a time.** If the editor is open, batch mode fails. Before running a batch command, check for a running editor with `pgrep -f "Unity.app/Contents/MacOS/Unity" >/dev/null && echo running` (don't print the process args; they contain an access token). If it is running, ask Brian to close it.
 
