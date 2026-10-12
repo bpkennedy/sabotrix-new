@@ -16,7 +16,7 @@ namespace Sabotrix.Game.UI
             $"{PlayerName(match, player)} ({player.Hero.Class})   " +
             $"HP {player.Hp}/{player.Hero.MaxHp}   Block {player.Block}   " +
             $"Energy {player.Energy}/{player.Hero.EnergyMax}   Special {player.SpecialEnergy}/{Rules.SpecialEnergyMax}   " +
-            $"Deck {player.Deck.Count}   Sabotage {player.SabotagesPlayed}/{Rules.MaxSabotagesPerMatch}";
+            $"Hand {player.Hand.Count}   Deck {player.Deck.Count}   Sabotage {player.SabotagesPlayed}/{Rules.MaxSabotagesPerMatch}";
 
         public static string CardFace(CardDefinition card, int cost)
         {

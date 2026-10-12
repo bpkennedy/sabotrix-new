@@ -1,4 +1,5 @@
 using System.IO;
+using Sabotrix.Core;
 using Sabotrix.Game;
 using Unity.Cinemachine;
 using UnityEditor;
@@ -25,7 +26,7 @@ namespace Sabotrix.Editor
         private const float SeatedEyeHeight = 1.2f;
         private const float SeatDistance = 0.85f;
         private const int HazardStripes = 10;
-        private const float SeatCameraTilt = 20f;
+        private const float SeatCameraTilt = 12f;
         private const float CameraFieldOfView = 60f;
 
         // The bar counter along the back wall, with stools in front and the back-bar behind.
@@ -39,6 +40,10 @@ namespace Sabotrix.Editor
         private const float BackBarZ = RoomDepth / 2 - 0.35f;
         private const float BackBarWidth = 4.4f;
         private const int BackBarShelves = 3;
+
+        // Player patrons hold their hand as a fan of face-down cards.
+        private const float CardFanAngle = 10f;
+        private const float CardFanSpacing = 0.05f;
 
         // Fixed seed so the bottles come out the same on every rebuild.
         private const int BottleSeed = 7;
@@ -64,6 +69,7 @@ namespace Sabotrix.Editor
             BuildWallDecorations(root.transform);
             BuildCameras(root.transform);
             root.AddComponent<CameraDirector>();
+            root.AddComponent<SeatedPlayers>();
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);
@@ -116,6 +122,7 @@ namespace Sabotrix.Editor
             Box("Seat", chairRoot, new Vector3(0, 0.45f, 0), new Vector3(0.45f, 0.05f, 0.45f), chair);
             Box("Back", chairRoot, new Vector3(0, 0.72f, -0.22f), new Vector3(0.45f, 0.5f, 0.05f), chair);
             Box("Base", chairRoot, new Vector3(0, 0.22f, 0), new Vector3(0.08f, 0.44f, 0.08f), chair);
+            BuildPlayerPatron(parent, player, chairRoot);
 
             // The seated player's eyes, tilted down toward the table. This is the first-person camera.
             Transform seat = Group($"Seat_P{player}", parent);
@@ -126,6 +133,41 @@ namespace Sabotrix.Editor
             // Drink on the table, to this player's right.
             Cylinder($"Drink_P{player}", parent, new Vector3(-side * 0.4f, TableHeight + 0.1f, side * 0.35f), new Vector3(0.08f, 0.075f, 0.08f),
                 GetMaterial("Drink", new Color(0.85f, 0.55f, 0.1f)));
+        }
+
+        // The player sitting in this chair, gray-box until human models arrive. Local +Z faces the table.
+        // SeatedPlayers hides your own patron in first person and shows the other one's hand as card backs.
+        private static void BuildPlayerPatron(Transform parent, int player, Transform chair)
+        {
+            Transform patron = Group($"Patron_P{player}", parent);
+            patron.localPosition = chair.localPosition;
+            patron.localRotation = chair.localRotation;
+
+            Color shirtColor = player == 1 ? new Color(0.8f, 0.45f, 0.15f) : new Color(0.3f, 0.6f, 0.5f);
+            Material shirt = GetMaterial($"PlayerShirt_P{player}", shirtColor);
+            Material pants = GetMaterial("Pants", new Color(0.15f, 0.17f, 0.25f));
+            Material skin = GetMaterial("PatronSkin", new Color(0.85f, 0.65f, 0.5f));
+
+            Capsule("Body", patron, new Vector3(0, 0.85f, 0), new Vector3(0.42f, 0.38f, 0.28f), shirt);
+            Sphere("Head", patron, new Vector3(0, 1.32f, 0), Vector3.one * 0.25f, skin);
+            Box("Thighs", patron, new Vector3(0, 0.52f, 0.18f), new Vector3(0.34f, 0.12f, 0.36f), pants);
+            Box("Shins", patron, new Vector3(0, 0.25f, 0.36f), new Vector3(0.3f, 0.5f, 0.12f), pants);
+            foreach (float x in new[] { -0.2f, 0.2f })
+            {
+                Box($"Arm_{(x < 0 ? "L" : "R")}", patron, new Vector3(x, 0.95f, 0.18f), new Vector3(0.09f, 0.09f, 0.36f), shirt);
+            }
+
+            // One card back per possible card in hand. SeatedPlayers turns on as many as the player holds.
+            Transform hand = Group("Hand", patron);
+            hand.localPosition = new Vector3(0, 1.05f, 0.4f);
+            hand.localEulerAngles = new Vector3(-20, 0, 0);
+            Material cardBack = GetMaterial("CardBack", new Color(0.2f, 0.2f, 0.45f));
+            float middle = (Rules.MaxHandSize - 1) / 2f;
+            for (int i = 0; i < Rules.MaxHandSize; i++)
+            {
+                GameObject card = Box($"Card_{i + 1}", hand, new Vector3((i - middle) * CardFanSpacing, 0, i * 0.002f), new Vector3(0.1f, 0.14f, 0.003f), cardBack);
+                card.transform.localEulerAngles = new Vector3(0, 0, -(i - middle) * CardFanAngle);
+            }
         }
 
         // The pendant light box over the table. Blackout smashes it.

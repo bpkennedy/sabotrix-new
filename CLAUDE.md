@@ -74,6 +74,7 @@ Assets/Sabotrix/
   Scripts/Game/      MonoBehaviours, UI, presentation. Assembly Sabotrix.Game
                      GameController (Title -> Setup -> Handoff/Match -> Results)
                      CameraDirector (on the Bar): switches Cinemachine cameras by name
+                     SeatedPlayers (on the Bar): hides your own patron, shows the opponent's card backs
     Data/            CardData, HeroData, DeckData ScriptableObject types
     UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
   Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor

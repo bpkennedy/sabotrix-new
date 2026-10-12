@@ -13,8 +13,6 @@ namespace Sabotrix.Game.UI
     {
         private const int CardWidth = 200;
         private const int CardHeight = 260;
-        private const int CardBackWidth = 60;
-        private const int CardBackHeight = 84;
         private const float UnplayableAlpha = 0.35f;
         private const int StatusPanelWidth = 420;
         private const int LogPanelWidth = 520;
@@ -29,7 +27,6 @@ namespace Sabotrix.Game.UI
         private static readonly Color FaceDownColor = new Color(0.25f, 0.25f, 0.32f);
 
         private Text _opponentStats;
-        private Transform _opponentHand;
         private Text _status;
         private Text _log;
         private Text _playerStats;
@@ -61,11 +58,6 @@ namespace Sabotrix.Game.UI
             PlayerState opponent = match.Opponent;
 
             _opponentStats.text = MatchText.Stats(match, opponent);
-            UiBuilder.Clear(_opponentHand);
-            for (int i = 0; i < opponent.Hand.Count; i++)
-            {
-                AddCardBack(_opponentHand);
-            }
 
             _status.text = StatusText(match);
             _log.text = string.Join("\n", log);
@@ -113,10 +105,10 @@ namespace Sabotrix.Game.UI
             rows.childForceExpandHeight = false;
 
             // Opponent row
-            Transform opponentRow = UiBuilder.AddRow("Opponent", background, 160, vertical: true);
+            // The opponent's face-down cards are in their hands in the bar (SeatedPlayers), not on this screen.
+            Transform opponentRow = UiBuilder.AddRow("Opponent", background, 56, vertical: true);
             opponentRow.gameObject.AddComponent<Image>().color = OverlayColor;
             _opponentStats = UiBuilder.AddText("OpponentStats", opponentRow, 28, TextAnchor.MiddleLeft, 40);
-            _opponentHand = UiBuilder.AddRow("OpponentHand", opponentRow, CardBackHeight, vertical: false);
 
             // Middle row: status on the left, log on the right, an empty gap in between to see the bar
             Transform middleRow = UiBuilder.AddRow("Middle", background, 0, vertical: false, flexible: true);
@@ -186,14 +178,6 @@ namespace Sabotrix.Game.UI
                 default:
                     return AttackColor;
             }
-        }
-
-        private static void AddCardBack(Transform parent)
-        {
-            Image back = UiBuilder.AddImage("CardBack", parent, FaceDownColor);
-            LayoutElement layout = back.gameObject.AddComponent<LayoutElement>();
-            layout.preferredWidth = CardBackWidth;
-            layout.preferredHeight = CardBackHeight;
         }
     }
 }

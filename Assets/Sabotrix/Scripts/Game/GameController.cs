@@ -28,6 +28,9 @@ namespace Sabotrix.Game
         [Tooltip("The CameraDirector on the Bar. Picks the seat camera for each turn.")]
         [SerializeField] private CameraDirector _cameras;
 
+        [Tooltip("The SeatedPlayers on the Bar. Shows the opponent holding their cards.")]
+        [SerializeField] private SeatedPlayers _seatedPlayers;
+
         // Setup picks per player, as indexes into _heroes and _decks.
         private readonly int[] _heroPicks = { 0, 1 };
         private readonly int[] _deckPicks = { 0, 1 };
@@ -106,6 +109,7 @@ namespace Sabotrix.Game
         {
             _matchScreen.Hide();
             _cameras.Show(CameraDirector.SeatName(_match.ActivePlayerIndex));
+            _seatedPlayers.Show(_match.ActivePlayerIndex, _match.Opponent.Hand.Count);
             _menu.Show($"PASS TO {MatchText.PlayerName(_match, _match.ActivePlayer).ToUpperInvariant()}", body, new[]
             {
                 new MenuButton("READY", ShowMatch)
