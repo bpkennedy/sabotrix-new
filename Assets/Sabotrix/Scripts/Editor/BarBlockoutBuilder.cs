@@ -17,7 +17,7 @@ namespace Sabotrix.Editor
         private const string LitShader = "Universal Render Pipeline/Lit";
 
         private const float RoomWidth = 10f;
-        private const float RoomDepth = 8f;
+        private const float RoomDepth = 10f;
         private const float RoomHeight = 4f;
         private const float WallThickness = 0.2f;
         private const float TrussHeight = 3.6f;
@@ -27,6 +27,21 @@ namespace Sabotrix.Editor
         private const int HazardStripes = 10;
         private const float SeatCameraTilt = 20f;
         private const float CameraFieldOfView = 60f;
+
+        // The bar counter along the back wall, with stools in front and the back-bar behind.
+        private const float CounterZ = RoomDepth / 2 - 1.5f;
+        private const float CounterLength = 5f;
+        private const float CounterDepth = 0.6f;
+        private const float CounterHeight = 1.05f;
+        private const float StoolZ = CounterZ - 0.75f;
+        private const float StoolHeight = 0.75f;
+        private const int StoolCount = 5;
+        private const float BackBarZ = RoomDepth / 2 - 0.35f;
+        private const float BackBarWidth = 4.4f;
+        private const int BackBarShelves = 3;
+
+        // Fixed seed so the bottles come out the same on every rebuild.
+        private const int BottleSeed = 7;
 
         [MenuItem("Sabotrix/Build Bar Blockout")]
         public static void Build()
@@ -43,6 +58,10 @@ namespace Sabotrix.Editor
             BuildLightBox(root.transform);
             BuildBeholder(root.transform);
             BuildWallProps(root.transform);
+            BuildBarCounter(root.transform);
+            BuildBarStools(root.transform);
+            BuildBackBar(root.transform);
+            BuildWallDecorations(root.transform);
             BuildCameras(root.transform);
             root.AddComponent<CameraDirector>();
 
@@ -66,7 +85,7 @@ namespace Sabotrix.Editor
             Box("Wall_Right", room, new Vector3(RoomWidth / 2, RoomHeight / 2, 0), new Vector3(WallThickness, RoomHeight, RoomDepth), brick);
 
             // Exposed red steel trusses across the ceiling, with pipes running the other way.
-            foreach (float z in new[] { -2f, 0f, 2f })
+            foreach (float z in new[] { -4f, -2f, 0f, 2f, 4f })
             {
                 Box($"Truss_{z:0}", room, new Vector3(0, TrussHeight, z), new Vector3(RoomWidth, 0.25f, 0.2f), steel);
             }
@@ -133,8 +152,8 @@ namespace Sabotrix.Editor
         {
             Material screen = GetMaterial("TvScreen", new Color(0.25f, 0.55f, 1f), emissive: true);
             float backWall = RoomDepth / 2 - WallThickness;
-            Box("TV_1", parent, new Vector3(-2f, 2.5f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
-            Box("TV_2", parent, new Vector3(2f, 2.5f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
+            Box("TV_1", parent, new Vector3(-2f, 2.9f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
+            Box("TV_2", parent, new Vector3(2f, 2.9f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
             Box("TV_3", parent, new Vector3(0, 2.5f, -backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
 
             // Breaker box on the right wall, near the table. Short Circuit sparks it.
@@ -175,6 +194,133 @@ namespace Sabotrix.Editor
             }
         }
 
+        // A long dark counter with rounded ends and a white neon strip along the bottom
+        // (reference: the bar in The Amazing Digital Circus, episode 5).
+        private static void BuildBarCounter(Transform parent)
+        {
+            Transform counter = Group("BarCounter", parent);
+            counter.localPosition = new Vector3(0, 0, CounterZ);
+            Material body = GetMaterial("CounterBody", new Color(0.12f, 0.12f, 0.13f));
+            Material top = GetMaterial("CounterTop", new Color(0.05f, 0.05f, 0.06f));
+            Box("Body", counter, new Vector3(0, CounterHeight / 2, 0), new Vector3(CounterLength, CounterHeight, CounterDepth), body);
+            Box("Top", counter, new Vector3(0, CounterHeight + 0.03f, 0), new Vector3(CounterLength, 0.06f, CounterDepth + 0.1f), top);
+
+            for (int i = 0; i < 2; i++)
+            {
+                float x = (i == 0 ? -1 : 1) * CounterLength / 2;
+                Cylinder($"End_{i + 1}", counter, new Vector3(x, CounterHeight / 2, 0), new Vector3(CounterDepth, CounterHeight / 2, CounterDepth), body);
+                Cylinder($"EndTop_{i + 1}", counter, new Vector3(x, CounterHeight + 0.03f, 0), new Vector3(CounterDepth + 0.1f, 0.03f, CounterDepth + 0.1f), top);
+            }
+
+            Box("NeonStrip", counter, new Vector3(0, 0.12f, -CounterDepth / 2 - 0.01f), new Vector3(CounterLength, 0.04f, 0.02f),
+                GetMaterial("NeonWhite", new Color(0.9f, 0.95f, 1f), emissive: true));
+        }
+
+        // Stools along the counter. Every other stool has a background patron: decoration only, not a player.
+        // The patrons are gray-box until M2.2 swaps in human models.
+        private static void BuildBarStools(Transform parent)
+        {
+            Material seat = GetMaterial("StoolSeat", new Color(0.85f, 0.85f, 0.8f));
+            Material leg = GetMaterial("StoolLeg", new Color(0.4f, 0.4f, 0.42f));
+            Material skin = GetMaterial("PatronSkin", new Color(0.85f, 0.65f, 0.5f));
+            Color[] shirtColors = { new Color(0.2f, 0.35f, 0.6f), new Color(0.5f, 0.2f, 0.25f), new Color(0.25f, 0.45f, 0.3f) };
+            float spacing = (CounterLength - 1f) / (StoolCount - 1);
+
+            for (int i = 0; i < StoolCount; i++)
+            {
+                Transform stool = Group($"Stool_{i + 1}", parent);
+                stool.localPosition = new Vector3(-CounterLength / 2 + 0.5f + i * spacing, 0, StoolZ);
+                Cylinder("Seat", stool, new Vector3(0, StoolHeight, 0), new Vector3(0.36f, 0.03f, 0.36f), seat);
+                Cylinder("Leg", stool, new Vector3(0, StoolHeight / 2, 0), new Vector3(0.05f, StoolHeight / 2, 0.05f), leg);
+
+                if (i % 2 != 0)
+                {
+                    continue;
+                }
+
+                int patron = i / 2;
+                Transform patronRoot = Group($"BarPatron_{patron + 1}", stool);
+                Capsule("Body", patronRoot, new Vector3(0, StoolHeight + 0.45f, 0), new Vector3(0.4f, 0.45f, 0.3f),
+                    GetMaterial($"PatronShirt_{patron + 1}", shirtColors[patron]));
+                Sphere("Head", patronRoot, new Vector3(0, StoolHeight + 1.05f, 0), Vector3.one * 0.25f, skin);
+            }
+        }
+
+        // Behind the counter: a cabinet, a mirror on the wall, and shelves of bottles in front of the mirror.
+        private static void BuildBackBar(Transform parent)
+        {
+            Transform backBar = Group("BackBar", parent);
+            backBar.localPosition = new Vector3(0, 0, BackBarZ);
+            Material wood = GetMaterial("BackBarWood", new Color(0.2f, 0.12f, 0.07f));
+            Box("Cabinet", backBar, new Vector3(0, 0.45f, 0), new Vector3(BackBarWidth, 0.9f, 0.4f), wood);
+
+            Material mirror = GetMaterial("Mirror", new Color(0.75f, 0.8f, 0.85f));
+            mirror.SetFloat("_Smoothness", 1f);
+            mirror.SetFloat("_Metallic", 1f);
+            Box("Mirror", backBar, new Vector3(0, 1.55f, 0.12f), new Vector3(BackBarWidth, 1.2f, 0.02f), mirror);
+
+            Material[] glass =
+            {
+                GetMaterial("BottleGreen", new Color(0.15f, 0.5f, 0.2f)),
+                GetMaterial("BottleAmber", new Color(0.7f, 0.4f, 0.1f)),
+                GetMaterial("BottleClear", new Color(0.75f, 0.85f, 0.9f)),
+                GetMaterial("BottleRed", new Color(0.6f, 0.1f, 0.15f)),
+                GetMaterial("BottleBlue", new Color(0.2f, 0.3f, 0.7f))
+            };
+            System.Random random = new System.Random(BottleSeed);
+            for (int shelf = 0; shelf < BackBarShelves; shelf++)
+            {
+                float y = 1f + shelf * 0.45f;
+                Box($"Shelf_{shelf + 1}", backBar, new Vector3(0, y, 0), new Vector3(BackBarWidth, 0.04f, 0.25f), wood);
+                AddBottles(backBar, shelf + 1, y + 0.02f, glass, random);
+            }
+        }
+
+        // Fills one shelf left to right with bottles of random width, height, color, and shape (tall or round).
+        private static void AddBottles(Transform backBar, int shelf, float y, Material[] glass, System.Random random)
+        {
+            float x = -BackBarWidth / 2 + 0.15f;
+            for (int n = 1; x < BackBarWidth / 2 - 0.2f; n++)
+            {
+                float width = 0.1f + (float)random.NextDouble() * 0.08f;
+                bool round = random.NextDouble() < 0.25;
+                float height = round ? width : 0.15f + (float)random.NextDouble() * 0.15f;
+                Material material = glass[random.Next(glass.Length)];
+
+                Transform bottle = Group($"Bottle_{shelf}_{n}", backBar);
+                bottle.localPosition = new Vector3(x + width / 2, y, 0);
+                if (round)
+                {
+                    Sphere("Body", bottle, new Vector3(0, height / 2, 0), Vector3.one * width, material);
+                }
+                else
+                {
+                    Cylinder("Body", bottle, new Vector3(0, height / 2, 0), new Vector3(width, height / 2, width), material);
+                }
+
+                Cylinder("Neck", bottle, new Vector3(0, height + 0.05f, 0), new Vector3(width * 0.35f, 0.05f, width * 0.35f), material);
+                x += width + 0.05f;
+            }
+        }
+
+        // Neon signs and framed pictures on the side walls, like the reference bar.
+        private static void BuildWallDecorations(Transform parent)
+        {
+            float wallFace = RoomWidth / 2 - WallThickness / 2 - 0.02f;
+            Box("Neon_Pink", parent, new Vector3(-wallFace, 2.3f, 2.5f), new Vector3(0.04f, 0.6f, 1f), GetMaterial("NeonPink", new Color(1f, 0.3f, 0.8f), emissive: true));
+            Box("Neon_Yellow", parent, new Vector3(-wallFace, 2.3f, -3.2f), new Vector3(0.04f, 0.6f, 0.9f), GetMaterial("NeonYellow", new Color(1f, 0.85f, 0.2f), emissive: true));
+            Box("Neon_Green", parent, new Vector3(wallFace, 2.4f, 3.2f), new Vector3(0.04f, 0.5f, 1.1f), GetMaterial("NeonGreen", new Color(0.3f, 1f, 0.6f), emissive: true));
+
+            Material frame = GetMaterial("PictureFrame", new Color(0.08f, 0.08f, 0.08f));
+            Material picture = GetMaterial("Picture", new Color(0.8f, 0.78f, 0.7f));
+            float[] frameZ = { -3.2f, -1.8f, 1.8f };
+            for (int i = 0; i < frameZ.Length; i++)
+            {
+                Box($"Frame_{i + 1}", parent, new Vector3(wallFace, 2.2f, frameZ[i]), new Vector3(0.04f, 0.6f, 0.45f), frame);
+                Box($"Picture_{i + 1}", parent, new Vector3(wallFace - 0.02f, 2.2f, frameZ[i]), new Vector3(0.02f, 0.48f, 0.35f), picture);
+            }
+        }
+
         // The seat cameras are built with the chairs. These are the other views.
         private static void BuildCameras(Transform parent)
         {
@@ -209,6 +355,10 @@ namespace Sabotrix.Editor
 
         private static GameObject Sphere(string name, Transform parent, Vector3 position, Vector3 scale, Material material) =>
             Primitive(PrimitiveType.Sphere, name, parent, position, scale, material, Vector3.zero);
+
+        // A Unity capsule is 2 units tall, so scale.y is half the height.
+        private static GameObject Capsule(string name, Transform parent, Vector3 position, Vector3 scale, Material material) =>
+            Primitive(PrimitiveType.Capsule, name, parent, position, scale, material, Vector3.zero);
 
         // A Unity cylinder is 2 units tall, so scale.y is half the height.
         private static GameObject Cylinder(string name, Transform parent, Vector3 position, Vector3 scale, Material material, Vector3 rotation = default) =>

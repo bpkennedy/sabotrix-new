@@ -12,7 +12,7 @@
 
 | Slice | Status | Commit |
 |:--|:--|:--|
-| M2.0 Bar blockout | Built. Waiting on Malcolm's layout check. | |
+| M2.0 Bar blockout | Done. Revised after feedback: bar counter, back-bar with bottles and mirror, stools with background patrons, neon signs, pictures. Room 10 × 10 m. | `86c7515` + revision |
 | M2.1 Seats and cameras | Done. Seat swaps are a hard cut (a blend flies through the table). | |
 | M2.2 Seated patrons | Not started | |
 | M2.3 Resolve show | Not started | |
@@ -61,6 +61,7 @@ Build the room out of plain shapes so we can judge size and layout before spendi
 - A patron sits in each chair. Start with a gray capsule body and head, then swap in two different generic human models with a seated idle animation (see Question 4).
 - The patron across from you holds face-down cards. The count matches the opponent's hand size and updates every turn. The overlay's face-down opponent row goes away.
 - The patron in your own seat is hidden while you're in first person (the camera sits where their head is).
+- The background patrons at the bar counter (`BarPatron_1..3`) get human models too, with a seated idle. They don't react to the game.
 
 > **Unity concept: Animator.** A component that plays animation clips on a model. A Mixamo "sitting idle" clip on a looping Animator is all M2 needs.
 

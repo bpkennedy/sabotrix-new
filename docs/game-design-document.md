@@ -43,6 +43,7 @@ Turn-based 1v1 card battler with deck building.
 | Reference | What we take from it |
 |:--|:--|
 | **Dirty 20 Nerd Bar** ([dirty20bar.com](https://www.dirty20bar.com/)) | The setting. Exposed red steel trusses and pipes, hanging pendant lights, brick walls, a giant beholder sculpture on a chain, TVs, game shelves, wood tables, hazard-striped step. |
+| **The Amazing Digital Circus** (episode 5 bar) | Bar layout: long dark counter with rounded ends and a neon strip along the bottom, stools, neon signs, framed pictures. |
 | **Dandy's World** (Roblox) | Hero art style: big round heads, stubby bodies, soft pastel shading, flat cartoon faces. |
 | **D&D night in real life** | The feeling: friends at a table, competitive, goofy, not actual fantasy. |
 | **Inscryption** | First-person view seated at a table, opponent sitting across, the room as part of the game. |
@@ -81,11 +82,15 @@ The bar is full of things that can be sabotaged. Each one is a chance for a ligh
 
 - 3D, modeled on the Dirty 20 reference photo: warm and slightly grungy, red steel, brick, wood, dark chairs, glowing TVs.
 - Lighting matters for gameplay. Sabotage effects change the lights (blackout, flicker, sparks), so the room is built to be relit at runtime.
+- The players' table sits in the middle of the room. Along the back wall is a bar counter (long, rounded ends, neon strip along the bottom) with stools in front.
+- Behind the counter: shelves of drink bottles in different shapes and sizes, and mirrors.
+- Wall decorations: neon signs and framed pictures.
 
 ### 4.2 Bar Patrons (the players)
 
 - The two players seated at the table are "average humans": ordinary bar-goers, not toons.
 - Your opponent sits across the table from you. Their hand is visible only as face-down cards.
+- **Background patrons** sit at the bar counter for atmosphere. They are ordinary humans too, and they don't play.
 
 ### 4.3 Heroes (card art)
 
