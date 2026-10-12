@@ -17,9 +17,6 @@ namespace Sabotrix.Game.UI
         private const int StatusPanelWidth = 420;
         private const int LogPanelWidth = 520;
 
-        // See-through so the bar shows behind the HUD.
-        private static readonly Color OverlayColor = new Color(0f, 0f, 0f, 0.55f);
-
         private static readonly Color AttackColor = new Color(0.7f, 0.25f, 0.25f);
         private static readonly Color SabotageColor = new Color(0.8f, 0.65f, 0.1f);
         private static readonly Color AbilityColor = new Color(0.85f, 0.55f, 0.15f);
@@ -107,26 +104,26 @@ namespace Sabotrix.Game.UI
             // Opponent row
             // The opponent's face-down cards are in their hands in the bar (SeatedPlayers), not on this screen.
             Transform opponentRow = UiBuilder.AddRow("Opponent", background, 56, vertical: true);
-            opponentRow.gameObject.AddComponent<Image>().color = OverlayColor;
+            opponentRow.gameObject.AddComponent<Image>().color = UiBuilder.OverlayColor;
             _opponentStats = UiBuilder.AddText("OpponentStats", opponentRow, 28, TextAnchor.MiddleLeft, 40);
 
             // Middle row: status on the left, log on the right, an empty gap in between to see the bar
             Transform middleRow = UiBuilder.AddRow("Middle", background, 0, vertical: false, flexible: true);
-            Image statusPanel = UiBuilder.AddImage("StatusPanel", middleRow, OverlayColor);
+            Image statusPanel = UiBuilder.AddImage("StatusPanel", middleRow, UiBuilder.OverlayColor);
             statusPanel.gameObject.AddComponent<LayoutElement>().preferredWidth = StatusPanelWidth;
             _status = UiBuilder.AddText("Status", statusPanel.transform, 28, TextAnchor.MiddleCenter, 0);
             UiBuilder.Stretch(_status.rectTransform, 16);
             GameObject gap = new GameObject("Gap", typeof(RectTransform));
             gap.transform.SetParent(middleRow, false);
             UiBuilder.Flexible(gap, 1);
-            Image logPanel = UiBuilder.AddImage("LogPanel", middleRow, OverlayColor);
+            Image logPanel = UiBuilder.AddImage("LogPanel", middleRow, UiBuilder.OverlayColor);
             logPanel.gameObject.AddComponent<LayoutElement>().preferredWidth = LogPanelWidth;
             _log = UiBuilder.AddText("Log", logPanel.transform, 22, TextAnchor.LowerLeft, 0);
             UiBuilder.Stretch(_log.rectTransform, 16);
 
             // Player row
             Transform playerRow = UiBuilder.AddRow("Player", background, 340, vertical: true);
-            playerRow.gameObject.AddComponent<Image>().color = OverlayColor;
+            playerRow.gameObject.AddComponent<Image>().color = UiBuilder.OverlayColor;
             _playerStats = UiBuilder.AddText("PlayerStats", playerRow, 28, TextAnchor.MiddleLeft, 40);
             Transform cardsRow = UiBuilder.AddRow("Cards", playerRow, CardHeight, vertical: false);
             _slots = UiBuilder.AddRow("Slots", cardsRow, CardHeight, vertical: false);
@@ -141,7 +138,7 @@ namespace Sabotrix.Game.UI
             bool selected = player.IsSelected(card);
             bool playable = selected || match.CanSelect(card);
 
-            Color color = faceDown ? FaceDownColor : CardColor(player, card);
+            Color color = faceDown ? FaceDownColor : CardColor(card.Definition);
             if (!playable && !faceDown)
             {
                 color.a = UnplayableAlpha;
@@ -162,14 +159,15 @@ namespace Sabotrix.Game.UI
             }
         }
 
-        private static Color CardColor(PlayerState player, CardInstance card)
+        // Also used for the cards laid on the table during the resolve show.
+        public static Color CardColor(CardDefinition card)
         {
-            if (card == player.BasicAttack)
+            if (card.Id == Rules.BasicAttack.Id)
             {
                 return BasicAttackColor;
             }
 
-            switch (card.Definition.Type)
+            switch (card.Type)
             {
                 case CardType.Ability:
                     return AbilityColor;

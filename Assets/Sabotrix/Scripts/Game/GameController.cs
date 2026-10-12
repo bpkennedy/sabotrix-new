@@ -31,6 +31,9 @@ namespace Sabotrix.Game
         [Tooltip("The SeatedPlayers on the Bar. Shows the opponent holding their cards.")]
         [SerializeField] private SeatedPlayers _seatedPlayers;
 
+        [Tooltip("The ResolveShow on the Bar. Plays each turn back over the table.")]
+        [SerializeField] private ResolveShow _resolveShow;
+
         // Setup picks per player, as indexes into _heroes and _decks.
         private readonly int[] _heroPicks = { 0, 1 };
         private readonly int[] _deckPicks = { 0, 1 };
@@ -109,7 +112,7 @@ namespace Sabotrix.Game
         {
             _matchScreen.Hide();
             _cameras.Show(CameraDirector.SeatName(_match.ActivePlayerIndex));
-            _seatedPlayers.Show(_match.ActivePlayerIndex, _match.Opponent.Hand.Count);
+            _seatedPlayers.Show(_match.Players, _match.ActivePlayerIndex);
             _menu.Show($"PASS TO {MatchText.PlayerName(_match, _match.ActivePlayer).ToUpperInvariant()}", body, new[]
             {
                 new MenuButton("READY", ShowMatch)
@@ -161,12 +164,24 @@ namespace Sabotrix.Game
             }
 
             int turn = _match.TurnNumber;
+            int[] hpBefore = _match.Players.Select(player => player.Hp).ToArray();
+            int[] blockBefore = _match.Players.Select(player => player.Block).ToArray();
             _match.EndTurn();
 
             List<string> turnLines = _match.LastTurnEvents.Select(matchEvent => MatchText.Describe(_match, matchEvent)).ToList();
             AddLog($"--- Turn {turn} ---");
             turnLines.ForEach(AddLog);
             string lastTurn = $"Turn {turn}:\n{string.Join("\n", turnLines)}";
+            StartCoroutine(PlayTurn(lastTurn, hpBefore, blockBefore));
+        }
+
+        // Watch the turn play out from overhead, then pass the seat (or show the winner).
+        private IEnumerator PlayTurn(string lastTurn, int[] hpBefore, int[] blockBefore)
+        {
+            _matchScreen.Hide();
+            _seatedPlayers.Show(_match.Players, SeatedPlayers.NoneHidden);
+            _cameras.Show(CameraDirector.Overhead);
+            yield return _resolveShow.Play(_match, hpBefore, blockBefore);
 
             if (_match.IsOver)
             {

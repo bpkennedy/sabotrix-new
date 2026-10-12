@@ -82,6 +82,7 @@ namespace Sabotrix.Editor
             BuildCameras(root.transform);
             root.AddComponent<CameraDirector>();
             root.AddComponent<SeatedPlayers>();
+            root.AddComponent<ResolveShow>();
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);

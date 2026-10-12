@@ -15,8 +15,8 @@
 | M2.0 Bar blockout | Done. Revised after feedback: bar counter, back-bar with bottles and mirror, stools with background patrons, neon signs, pictures. Room 10 × 10 m. | `86c7515` + revision |
 | M2.1 Seats and cameras | Done. Seat swaps are a hard cut (a blend flies through the table). | |
 | M2.2 Seated patrons | Done. Quaternius human models (CC0, see `docs/credits.md`) with sitting animations from the Universal Animation Library. Players sit idle, bar patrons sit talking. Seat tilt 12°. | |
-| M2.3 Resolve show | Not started | |
-| Playtest 3 | Not started | |
+| M2.3 Resolve show | Done. 0.6 s blend to overhead, 0.8 s per step, click or Space skips. | |
+| Playtest 3 | **Next** | |
 | M2.4 Dress the bar | Not started | |
 | M2.5 Lighting | Not started | |
 | M2.6 Blackout room effect | Not started | |

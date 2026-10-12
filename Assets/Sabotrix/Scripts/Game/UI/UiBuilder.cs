@@ -13,6 +13,9 @@ namespace Sabotrix.Game.UI
         public static readonly Color PanelColor = new Color(0.18f, 0.16f, 0.16f);
         public static readonly Color ButtonColor = new Color(0.2f, 0.5f, 0.3f);
 
+        // See-through, so the bar shows behind HUD rows.
+        public static readonly Color OverlayColor = new Color(0f, 0f, 0f, 0.55f);
+
         private static Font _font;
 
         private static Font Font

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Sabotrix.Core;
 using UnityEngine;
 
 namespace Sabotrix.Game
@@ -9,6 +11,9 @@ namespace Sabotrix.Game
     {
         private const int PlayerCount = 2;
 
+        // Pass as hiddenPlayerIndex to show both patrons (the overhead view).
+        public const int NoneHidden = -1;
+
         private readonly Transform[] _patrons = new Transform[PlayerCount];
 
         private void Awake()
@@ -19,16 +24,16 @@ namespace Sabotrix.Game
             }
         }
 
-        public void Show(int activePlayerIndex, int opponentHandCount)
+        public void Show(IReadOnlyList<PlayerState> players, int hiddenPlayerIndex)
         {
             for (int i = 0; i < PlayerCount; i++)
             {
-                _patrons[i].gameObject.SetActive(i != activePlayerIndex);
+                _patrons[i].gameObject.SetActive(i != hiddenPlayerIndex);
 
                 Transform hand = _patrons[i].Find("Hand");
                 for (int card = 0; card < hand.childCount; card++)
                 {
-                    hand.GetChild(card).gameObject.SetActive(card < opponentHandCount);
+                    hand.GetChild(card).gameObject.SetActive(card < players[i].Hand.Count);
                 }
             }
         }

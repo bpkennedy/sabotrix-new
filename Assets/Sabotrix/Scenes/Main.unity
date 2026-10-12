@@ -202,6 +202,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a6a798b64d2d48fb8492f907233122c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.SeatedPlayers
+--- !u!114 &467577353 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7331806609880429380, guid: 53b9a77dcab164336a0b235164158d22, type: 3}
+  m_PrefabInstance: {fileID: 467577350}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0f6f030378044da3b5542967779f27a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.ResolveShow
 --- !u!1 &594332027
 GameObject:
   m_ObjectHideFlags: 0
@@ -367,6 +378,7 @@ MonoBehaviour:
   _seed: 0
   _cameras: {fileID: 467577351}
   _seatedPlayers: {fileID: 467577352}
+  _resolveShow: {fileID: 467577353}
 --- !u!4 &1291295221
 Transform:
   m_ObjectHideFlags: 0
@@ -534,8 +546,8 @@ MonoBehaviour:
     Enabled: 0
     DefaultMode: 2
   DefaultBlend:
-    Style: 0
-    Time: 0
+    Style: 1
+    Time: 0.6
     CustomCurve:
       serializedVersion: 2
       m_Curve: []
