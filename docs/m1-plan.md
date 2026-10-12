@@ -6,6 +6,23 @@
 
 **Done when:** Brian and Malcolm play a full match on the Windows PC from a Windows build, start to results screen, with no rule bugs.
 
+## Status (2026-10-11)
+
+| Slice | Status | Commit |
+|:--|:--|:--|
+| M1.0 Project cleanup | Done | `eee58ae` |
+| M1.1 Core data model | Done | `072835d` |
+| M1.2 Turn flow | Done | `10cb087` |
+| M1.3 Card effects | Done | `fe7a20f` |
+| M1.4 Card data assets | Done | `e5308af` |
+| M1.5 Gray-box match screen | Done | `acbe875` |
+| Playtest 1 | Done. Matches too long: HP and Big Finish threshold halved, turn limit 30 → 16 | `f3c1208` |
+| M1.6 Hot-seat flow | Done | `ca832d9` |
+| M1.7 Windows build | Built and zipped (`Builds/Sabotrix-Windows.zip`, not in git). Not yet run on the Windows PC. | `fa48b97` |
+| Playtest 2 | **Next:** play 5+ matches on the Windows PC, then tune numbers or start M2 | |
+
+M2 (the 3D bar) has no plan yet. Write `docs/m2-plan.md` the same way before starting it.
+
 ---
 
 ## Slices

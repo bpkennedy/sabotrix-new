@@ -9,7 +9,7 @@ Turn-based 1v1 card battler set in a nerd bar, where Sabotage cards mess with th
 
 - `docs/game-design-document.md` (GDD) defines the game. Do not invent rules, cards, or numbers. If the GDD is silent or ambiguous, ask instead of guessing.
 - When a rule changes, update the GDD in the same change.
-- `docs/m1-plan.md` is the current milestone plan.
+- `docs/m1-plan.md` is the current milestone plan. Its **Status** table says what's done and what's next. Update it as slices finish.
 
 ## Working With This Team
 
@@ -36,6 +36,16 @@ When the editor is open, use the `unityMCP` tools ([MCP for Unity](https://githu
 - `read_console`: check for compile errors and logs
 - `run_tests` + `get_test_job`: run EditMode tests (enable the `testing` group with `manage_tools` if needed)
 
+Also useful:
+
+- `manage_scriptable_object`: create/modify data assets with patches like `{"propertyPath": "_cost", "op": "set", "value": 2}`. Enums are set by index. Object references use `"ref": {"guid": "..."}`. List entries can be set directly (`_cards.Array.data[3].Card`); setting `Array.size` is not supported but lists grow automatically.
+- `manage_scene`, `manage_gameobject`, `manage_components`: build and wire scenes. Save with `manage_scene` `save`.
+- `manage_editor` `play`/`stop` + `manage_camera` `screenshot` (with `include_image`, `output_folder: Temp/Screenshots`): check the game visually.
+- `execute_code`: drive the running game, e.g. invoke a UI button's `onClick`, or call `GameController` methods through reflection to auto-play a match. Use `UnityEngine.Object` explicitly (plain `Object` is ambiguous).
+- `manage_build` `build` with `target: windows64`: Windows build while the editor stays open. Wait for `Build Finished, Result` in `~/Library/Logs/Unity/Editor.log`.
+
+All `mcp__UnityMCP` tools are pre-approved in `.claude/settings.local.json`.
+
 The server runs inside the editor (HTTP, `127.0.0.1:8080`). Start it from **Window → MCP for Unity**. Each machine registers it with Claude Code once, through that window's client setup or with `claude mcp add --scope local --transport http UnityMCP http://127.0.0.1:8080/mcp`.
 
 ## Unity CLI (editor closed)
@@ -60,12 +70,19 @@ UNITY=/Applications/Unity/Hub/Editor/6000.3.26f1/Unity.app/Contents/MacOS/Unity
 ```
 Assets/Sabotrix/
   Scripts/Core/      Rules engine. Pure C#. Assembly Sabotrix.Core (noEngineReferences: true)
+                     Match (rules + turn flow), PlayerState, CardDefinition, Rules (constants), MatchEvent
   Scripts/Game/      MonoBehaviours, UI, presentation. Assembly Sabotrix.Game
-  Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor
-  Data/              ScriptableObject assets (heroes, cards, decks)
-  Scenes/
-  Tests/EditMode/    Rules engine tests. Assembly Sabotrix.Tests.EditMode
+                     GameController (Title -> Setup -> Handoff/Match -> Results)
+    Data/            CardData, HeroData, DeckData ScriptableObject types
+    UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
+  Scripts/Editor/    Editor-only tools (empty so far). Assembly Sabotrix.Editor
+  Data/              ScriptableObject assets: Cards/, Heroes/, Decks/
+  Scenes/Main.unity  The only scene (camera + Game object with GameController)
+  Tests/EditMode/    Assembly Sabotrix.Tests.EditMode. TestContent mirrors GDD Section 10.
 ```
+
+- `StarterAssetTests` check that the data assets match `TestContent` (the GDD numbers). When a card or hero number changes, update the asset, `TestContent`, and the GDD together.
+- UI text uses legacy `UnityEngine.UI.Text` with the built-in font (no TextMeshPro setup yet).
 
 ## Architecture
 
