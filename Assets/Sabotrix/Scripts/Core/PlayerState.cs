@@ -16,6 +16,16 @@ namespace Sabotrix.Core
         public int SpecialEnergy { get; internal set; }
         public int SabotagesPlayed { get; internal set; }
 
+        // Sabotage effects active during this player's current turn.
+        public bool IsBlind { get; internal set; }
+        public int AttackCostIncrease { get; internal set; }
+
+        // Sabotage effects waiting for this player's next turn to start.
+        internal bool PendingBlind { get; set; }
+        internal int PendingEnergyGain { get; set; }
+        internal int PendingEnergyLoss { get; set; }
+        internal int PendingAttackCostIncrease { get; set; }
+
         // Ability and Basic Attack live in their own slots, never in the deck or hand.
         public CardInstance Ability { get; }
         public CardInstance BasicAttack { get; }

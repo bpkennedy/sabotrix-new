@@ -7,6 +7,10 @@ namespace Sabotrix.Core
     public sealed class Match
     {
         private readonly PlayerState[] _players;
+        private readonly IRandom _random;
+
+        // Set by an Ability like Haymaker; used up by the next Attack this turn.
+        private bool _doubleNextAttack;
 
         public IReadOnlyList<PlayerState> Players => _players;
         public int TurnNumber { get; private set; }
@@ -18,9 +22,10 @@ namespace Sabotrix.Core
         // Null while the match is running, and null when it ends in a draw.
         public PlayerState Winner { get; private set; }
 
-        private Match(PlayerState playerOne, PlayerState playerTwo)
+        private Match(PlayerState playerOne, PlayerState playerTwo, IRandom random)
         {
             _players = new[] { playerOne, playerTwo };
+            _random = random;
         }
 
         // Builds the match, shuffles, deals, picks the first player, and starts turn 1.
@@ -34,7 +39,7 @@ namespace Sabotrix.Core
                 NewInstance(hero.Ability),
                 NewInstance(Rules.BasicAttack));
 
-            Match match = new Match(NewPlayer(heroOne, deckOne), NewPlayer(heroTwo, deckTwo));
+            Match match = new Match(NewPlayer(heroOne, deckOne), NewPlayer(heroTwo, deckTwo), random);
 
             foreach (PlayerState player in match._players)
             {
@@ -48,6 +53,14 @@ namespace Sabotrix.Core
             match.ActivePlayerIndex = FirstPlayerIndex(heroOne, heroTwo, random);
             match.StartTurn();
             return match;
+        }
+
+        // Energy cost for the active player this turn, including Sabotage cost increases.
+        // Ability cards cost Special Energy instead.
+        public int CostOf(CardInstance card)
+        {
+            bool isAttackCard = card.Definition.Type == CardType.Attack && card != ActivePlayer.BasicAttack;
+            return card.Definition.Cost + (isAttackCard ? ActivePlayer.AttackCostIncrease : 0);
         }
 
         public bool CanSelect(CardInstance card)
@@ -76,9 +89,9 @@ namespace Sabotrix.Core
             switch (card.Definition.Type)
             {
                 case CardType.Attack:
-                    return player.Energy >= card.Definition.Cost;
+                    return player.Energy >= CostOf(card);
                 case CardType.Sabotage:
-                    return player.Energy >= card.Definition.Cost
+                    return player.Energy >= CostOf(card)
                         && player.SabotagesPlayed < Rules.MaxSabotagesPerMatch
                         && !player.Selected.Any(selected => selected.Definition.Type == CardType.Sabotage);
                 default:
@@ -101,7 +114,7 @@ namespace Sabotrix.Core
             }
             else
             {
-                player.Energy -= card.Definition.Cost;
+                player.Energy -= CostOf(card);
             }
 
             player.Select(card);
@@ -123,7 +136,7 @@ namespace Sabotrix.Core
             }
             else
             {
-                player.Energy += card.Definition.Cost;
+                player.Energy += CostOf(card);
             }
 
             player.Unselect(card);
@@ -146,14 +159,15 @@ namespace Sabotrix.Core
             foreach (CardInstance card in playOrder)
             {
                 Resolve(card);
-                if (Opponent.Hp <= 0)
+                if (TryEndMatchOnKnockout())
                 {
-                    EndMatch(player);
                     return;
                 }
             }
 
             player.CyclePlayedCards(playOrder);
+            player.IsBlind = false;
+            player.AttackCostIncrease = 0;
 
             if (TurnNumber >= Rules.TurnLimit)
             {
@@ -199,40 +213,167 @@ namespace Sabotrix.Core
             }
         }
 
-        private static bool HasSelectedAttack(PlayerState player) =>
+        private bool HasSelectedAttack(PlayerState player) =>
             player.Selected.Any(card => card.Definition.Type == CardType.Attack);
 
-        private static bool HasAffordableAttackInHand(PlayerState player) =>
+        private bool HasAffordableAttackInHand(PlayerState player) =>
             player.Hand.Any(card =>
                 card.Definition.Type == CardType.Attack
                 && !player.IsSelected(card)
-                && player.Energy >= card.Definition.Cost);
+                && player.Energy >= CostOf(card));
 
         private void StartTurn()
         {
             TurnNumber++;
+            _doubleNextAttack = false;
             PlayerState player = ActivePlayer;
+
+            // Unused Block disappears at the start of your next turn.
+            player.Block = 0;
 
             if (player.Hand.Count < Rules.MaxHandSize)
             {
                 player.DrawCard();
             }
 
-            player.Energy = Math.Min(player.Hero.EnergyMax, player.Energy + player.Hero.EnergyRegen);
+            int energyMax = player.Hero.EnergyMax;
+            player.Energy = Math.Min(energyMax, player.Energy + player.Hero.EnergyRegen + player.PendingEnergyGain);
+            player.Energy = Math.Max(0, player.Energy - player.PendingEnergyLoss);
+            player.IsBlind = player.PendingBlind;
+            player.AttackCostIncrease = player.PendingAttackCostIncrease;
+
+            player.PendingEnergyGain = 0;
+            player.PendingEnergyLoss = 0;
+            player.PendingBlind = false;
+            player.PendingAttackCostIncrease = 0;
         }
 
-        // Card effects, Strength, and Block arrive in M1.3. For now Attacks deal their printed damage.
         private void Resolve(CardInstance card)
         {
             switch (card.Definition.Type)
             {
+                case CardType.Ability:
+                    ResolveAbility(card.Definition);
+                    break;
                 case CardType.Attack:
-                    Opponent.Hp = Math.Max(0, Opponent.Hp - card.Definition.Damage);
+                    ResolveAttack(card);
                     break;
                 case CardType.Sabotage:
-                    ActivePlayer.SabotagesPlayed++;
+                    ResolveSabotage(card.Definition);
                     break;
             }
+        }
+
+        private void ResolveAbility(CardDefinition ability)
+        {
+            ActivePlayer.Block += ability.Block;
+            if (ability.DoublesNextAttack)
+            {
+                _doubleNextAttack = true;
+            }
+        }
+
+        private void ResolveAttack(CardInstance card)
+        {
+            PlayerState player = ActivePlayer;
+            PlayerState target = Opponent;
+            CardDefinition attack = card.Definition;
+
+            // Attack damage = card damage + Strength (Basic Attack gets no Strength).
+            int damagePerHit = attack.Damage + (card == player.BasicAttack ? 0 : player.Hero.Strength);
+            if (attack.FinisherBonus > 0 && target.Hp <= attack.FinisherHpThreshold)
+            {
+                damagePerHit += attack.FinisherBonus;
+            }
+
+            if (_doubleNextAttack)
+            {
+                damagePerHit *= 2;
+                _doubleNextAttack = false;
+            }
+
+            bool dealtDamage = false;
+            for (int hit = 0; hit < attack.Hits && target.Hp > 0; hit++)
+            {
+                if (DealDamage(target, damagePerHit) > 0)
+                {
+                    dealtDamage = true;
+                    GainSpecialEnergy(player, player.Hero.SpecialEnergyGain);
+                }
+            }
+
+            if (dealtDamage)
+            {
+                GainSpecialEnergy(player, attack.BonusSpecialEnergy);
+            }
+
+            player.Block += attack.Block;
+            player.Hp = Math.Min(player.Hero.MaxHp, player.Hp + attack.Heal);
+        }
+
+        private void ResolveSabotage(CardDefinition sabotage)
+        {
+            PlayerState player = ActivePlayer;
+            PlayerState target = Opponent;
+            player.SabotagesPlayed++;
+
+            bool backfired = sabotage.ReversalChance > 0 && _random.NextDouble() <= sabotage.ReversalChance;
+            PlayerState affected = backfired ? player : target;
+            int amount = backfired ? sabotage.ReversalAmount : sabotage.SabotageAmount;
+
+            switch (sabotage.Sabotage)
+            {
+                case SabotageKind.Blind:
+                    affected.PendingBlind = true;
+                    break;
+                case SabotageKind.EnergySteal:
+                    affected.PendingEnergyLoss += amount;
+                    if (!backfired)
+                    {
+                        player.PendingEnergyGain += amount;
+                    }
+                    break;
+                case SabotageKind.Damage:
+                    DealDamage(affected, amount);
+                    break;
+                case SabotageKind.AttackCostIncrease:
+                    affected.PendingAttackCostIncrease += amount;
+                    break;
+            }
+        }
+
+        // Block absorbs damage first. Returns the HP actually lost.
+        private static int DealDamage(PlayerState target, int amount)
+        {
+            int absorbed = Math.Min(target.Block, amount);
+            target.Block -= absorbed;
+
+            int hpLost = Math.Min(target.Hp, amount - absorbed);
+            target.Hp -= hpLost;
+            return hpLost;
+        }
+
+        private static void GainSpecialEnergy(PlayerState player, int amount)
+        {
+            player.SpecialEnergy = Math.Min(Rules.SpecialEnergyMax, player.SpecialEnergy + amount);
+        }
+
+        // A backfire can knock out the player who played the Sabotage.
+        private bool TryEndMatchOnKnockout()
+        {
+            if (Opponent.Hp <= 0)
+            {
+                EndMatch(ActivePlayer);
+                return true;
+            }
+
+            if (ActivePlayer.Hp <= 0)
+            {
+                EndMatch(Opponent);
+                return true;
+            }
+
+            return false;
         }
 
         private void EndMatchByHp()

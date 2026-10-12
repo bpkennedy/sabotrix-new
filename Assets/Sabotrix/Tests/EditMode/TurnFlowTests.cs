@@ -14,7 +14,7 @@ namespace Sabotrix.Tests.EditMode
 
             match.EndTurn();
 
-            Assert.That(match.Players[1].Hp, Is.EqualTo(220 - 10));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(220 - 13));
         }
 
         [Test]

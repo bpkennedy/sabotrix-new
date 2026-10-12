@@ -260,7 +260,9 @@ Reversal effects must be:
 | **Block** | Absorbs all damage, including Sabotage damage (e.g. Beholder Drop). |
 | **Healing** | Can't go above the hero's starting HP. |
 | **Basic Attack** | Earns Special Energy when it deals damage, like any Attack. |
-| **Haymaker** | Doubles (card damage + Strength). |
+| **Haymaker** | Doubles (card damage + Strength) of the next Attack, including Big Finish's bonus, both Double Tap hits, or Basic Attack. |
+| **Special Energy gain** | Earned only when an Attack removes HP. A fully blocked Attack earns none. Poke's +1 bonus follows the same rule. |
+| **Backfire knockout** | If a backfire drops the saboteur to 0 HP, the opponent wins. |
 | **Big Finish** | Checks opponent HP at the moment Big Finish resolves (after earlier Attacks this turn). |
 | **Short Circuit** | Opponent loses 2 Energy at the start of their next turn (after Regen). The player who played it gains 2 Energy at the start of their own next turn (up to Max). |
 | **Spilled Drink** | The +1 cost applies to Attack cards only, not Basic Attack. |
