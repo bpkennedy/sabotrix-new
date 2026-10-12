@@ -3,6 +3,7 @@ using Sabotrix.Core;
 using Sabotrix.Game;
 using Unity.Cinemachine;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Sabotrix.Editor
@@ -16,6 +17,13 @@ namespace Sabotrix.Editor
         private const string PrefabPath = "Assets/Sabotrix/Prefabs/Bar.prefab";
         private const string MaterialFolder = "Assets/Sabotrix/Art/Blockout";
         private const string LitShader = "Universal Render Pipeline/Lit";
+        private const string CharacterFolder = "Assets/Sabotrix/Art/Characters";
+        private const string AnimationFolder = "Assets/Sabotrix/Art/Animations";
+        private const string AnimationLibraryPath = AnimationFolder + "/UniversalAnimationLibrary.fbx";
+
+        // Quaternius models (see docs/credits.md). Index 0 is Player 1.
+        private static readonly string[] PlayerModels = { "Man_Casual", "Woman_Casual" };
+        private static readonly string[] BarPatronModels = { "Man_Suit", "Woman_Punk", "Man_Worker" };
 
         private const float RoomWidth = 10f;
         private const float RoomDepth = 10f;
@@ -25,6 +33,10 @@ namespace Sabotrix.Editor
         private const float TableHeight = 0.75f;
         private const float SeatedEyeHeight = 1.2f;
         private const float SeatDistance = 0.85f;
+        private const float ChairSeatHeight = 0.45f;
+
+        // The sitting animation puts the hips this far behind the model's origin, so the model moves forward onto the seat.
+        private const float SittingHipsOffset = 0.2f;
         private const int HazardStripes = 10;
         private const float SeatCameraTilt = 12f;
         private const float CameraFieldOfView = 60f;
@@ -119,7 +131,7 @@ namespace Sabotrix.Editor
             Transform chairRoot = Group($"Chair_P{player}", parent);
             chairRoot.localPosition = new Vector3(0, 0, side * SeatDistance);
             chairRoot.localEulerAngles = new Vector3(0, facing, 0);
-            Box("Seat", chairRoot, new Vector3(0, 0.45f, 0), new Vector3(0.45f, 0.05f, 0.45f), chair);
+            Box("Seat", chairRoot, new Vector3(0, ChairSeatHeight, 0), new Vector3(0.45f, 0.05f, 0.45f), chair);
             Box("Back", chairRoot, new Vector3(0, 0.72f, -0.22f), new Vector3(0.45f, 0.5f, 0.05f), chair);
             Box("Base", chairRoot, new Vector3(0, 0.22f, 0), new Vector3(0.08f, 0.44f, 0.08f), chair);
             BuildPlayerPatron(parent, player, chairRoot);
@@ -135,32 +147,19 @@ namespace Sabotrix.Editor
                 GetMaterial("Drink", new Color(0.85f, 0.55f, 0.1f)));
         }
 
-        // The player sitting in this chair, gray-box until human models arrive. Local +Z faces the table.
+        // The player sitting in this chair. Local +Z faces the table.
         // SeatedPlayers hides your own patron in first person and shows the other one's hand as card backs.
         private static void BuildPlayerPatron(Transform parent, int player, Transform chair)
         {
             Transform patron = Group($"Patron_P{player}", parent);
             patron.localPosition = chair.localPosition;
             patron.localRotation = chair.localRotation;
+            AddSeatedCharacter(patron, PlayerModels[player - 1], "Rig|Sitting_Idle_Loop", 0f);
 
-            Color shirtColor = player == 1 ? new Color(0.8f, 0.45f, 0.15f) : new Color(0.3f, 0.6f, 0.5f);
-            Material shirt = GetMaterial($"PlayerShirt_P{player}", shirtColor);
-            Material pants = GetMaterial("Pants", new Color(0.15f, 0.17f, 0.25f));
-            Material skin = GetMaterial("PatronSkin", new Color(0.85f, 0.65f, 0.5f));
-
-            Capsule("Body", patron, new Vector3(0, 0.85f, 0), new Vector3(0.42f, 0.38f, 0.28f), shirt);
-            Sphere("Head", patron, new Vector3(0, 1.32f, 0), Vector3.one * 0.25f, skin);
-            Box("Thighs", patron, new Vector3(0, 0.52f, 0.18f), new Vector3(0.34f, 0.12f, 0.36f), pants);
-            Box("Shins", patron, new Vector3(0, 0.25f, 0.36f), new Vector3(0.3f, 0.5f, 0.12f), pants);
-            foreach (float x in new[] { -0.2f, 0.2f })
-            {
-                Box($"Arm_{(x < 0 ? "L" : "R")}", patron, new Vector3(x, 0.95f, 0.18f), new Vector3(0.09f, 0.09f, 0.36f), shirt);
-            }
-
-            // One card back per possible card in hand. SeatedPlayers turns on as many as the player holds.
+            // One card back per possible card in hand, held over the lap. SeatedPlayers turns on as many as the player holds.
             Transform hand = Group("Hand", patron);
-            hand.localPosition = new Vector3(0, 1.05f, 0.4f);
-            hand.localEulerAngles = new Vector3(-20, 0, 0);
+            hand.localPosition = new Vector3(0, 0.85f, 0.15f);
+            hand.localEulerAngles = new Vector3(-40, 0, 0);
             Material cardBack = GetMaterial("CardBack", new Color(0.2f, 0.2f, 0.45f));
             float middle = (Rules.MaxHandSize - 1) / 2f;
             for (int i = 0; i < Rules.MaxHandSize; i++)
@@ -264,8 +263,6 @@ namespace Sabotrix.Editor
         {
             Material seat = GetMaterial("StoolSeat", new Color(0.85f, 0.85f, 0.8f));
             Material leg = GetMaterial("StoolLeg", new Color(0.4f, 0.4f, 0.42f));
-            Material skin = GetMaterial("PatronSkin", new Color(0.85f, 0.65f, 0.5f));
-            Color[] shirtColors = { new Color(0.2f, 0.35f, 0.6f), new Color(0.5f, 0.2f, 0.25f), new Color(0.25f, 0.45f, 0.3f) };
             float spacing = (CounterLength - 1f) / (StoolCount - 1);
 
             for (int i = 0; i < StoolCount; i++)
@@ -280,11 +277,10 @@ namespace Sabotrix.Editor
                     continue;
                 }
 
+                // The stool is taller than a chair, so lift the sitting pose to the stool seat.
                 int patron = i / 2;
                 Transform patronRoot = Group($"BarPatron_{patron + 1}", stool);
-                Capsule("Body", patronRoot, new Vector3(0, StoolHeight + 0.45f, 0), new Vector3(0.4f, 0.45f, 0.3f),
-                    GetMaterial($"PatronShirt_{patron + 1}", shirtColors[patron]));
-                Sphere("Head", patronRoot, new Vector3(0, StoolHeight + 1.05f, 0), Vector3.one * 0.25f, skin);
+                AddSeatedCharacter(patronRoot, BarPatronModels[patron], "Rig|Sitting_Talking_Loop", StoolHeight - ChairSeatHeight);
             }
         }
 
@@ -398,9 +394,40 @@ namespace Sabotrix.Editor
         private static GameObject Sphere(string name, Transform parent, Vector3 position, Vector3 scale, Material material) =>
             Primitive(PrimitiveType.Sphere, name, parent, position, scale, material, Vector3.zero);
 
-        // A Unity capsule is 2 units tall, so scale.y is half the height.
-        private static GameObject Capsule(string name, Transform parent, Vector3 position, Vector3 scale, Material material) =>
-            Primitive(PrimitiveType.Capsule, name, parent, position, scale, material, Vector3.zero);
+        // Places a character model sitting on a chair-height seat at the parent's origin, playing a looping sitting clip.
+        private static void AddSeatedCharacter(Transform parent, string model, string clipName, float lift)
+        {
+            GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{CharacterFolder}/{model}.fbx");
+            GameObject character = (GameObject)PrefabUtility.InstantiatePrefab(asset, parent);
+            character.name = "Model";
+            character.transform.localPosition = new Vector3(0, lift, SittingHipsOffset);
+            character.transform.localRotation = Quaternion.identity;
+
+            Animator animator = character.GetComponent<Animator>();
+            animator.applyRootMotion = false;
+            animator.runtimeAnimatorController = GetController(clipName);
+        }
+
+        // An Animator Controller with one state that loops the clip. Created once, reused on rebuild.
+        private static AnimatorController GetController(string clipName)
+        {
+            string path = $"{AnimationFolder}/{clipName.Replace("Rig|", "")}.controller";
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+            if (controller != null)
+            {
+                return controller;
+            }
+
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(AnimationLibraryPath))
+            {
+                if (asset is AnimationClip clip && clip.name == clipName)
+                {
+                    return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+                }
+            }
+
+            throw new System.ArgumentException($"No clip named {clipName} in {AnimationLibraryPath}");
+        }
 
         // A Unity cylinder is 2 units tall, so scale.y is half the height.
         private static GameObject Cylinder(string name, Transform parent, Vector3 position, Vector3 scale, Material material, Vector3 rotation = default) =>

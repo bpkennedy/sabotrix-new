@@ -83,6 +83,8 @@ Assets/Sabotrix/
   Prefabs/Bar.prefab The bar room. Props named for lookup (LightBox, Seat_P1, ...)
                      Cinemachine cameras: Seat_P1, Seat_P2, Overhead, Cutaway_LightBox
   Art/Blockout/      Flat-color materials for the bar blockout
+  Art/Characters/    Quaternius human models (Humanoid rig). Credits in docs/credits.md
+  Art/Animations/    Universal Animation Library FBX + sitting Animator Controllers
   Scenes/Main.unity  The only scene (camera, Bar, TempLight, Game object with GameController)
   Tests/EditMode/    Assembly Sabotrix.Tests.EditMode. TestContent mirrors GDD Section 10.
 ```
