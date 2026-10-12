@@ -75,9 +75,12 @@ Assets/Sabotrix/
                      GameController (Title -> Setup -> Handoff/Match -> Results)
     Data/            CardData, HeroData, DeckData ScriptableObject types
     UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
-  Scripts/Editor/    Editor-only tools (empty so far). Assembly Sabotrix.Editor
+  Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor
+                     BarBlockoutBuilder (menu Sabotrix → Build Bar Blockout)
   Data/              ScriptableObject assets: Cards/, Heroes/, Decks/
-  Scenes/Main.unity  The only scene (camera + Game object with GameController)
+  Prefabs/Bar.prefab The bar room. Props named for lookup (LightBox, Seat_P1, ...)
+  Art/Blockout/      Flat-color materials for the bar blockout
+  Scenes/Main.unity  The only scene (camera, Bar, TempLight, Game object with GameController)
   Tests/EditMode/    Assembly Sabotrix.Tests.EditMode. TestContent mirrors GDD Section 10.
 ```
 

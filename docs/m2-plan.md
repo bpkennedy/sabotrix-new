@@ -12,7 +12,7 @@
 
 | Slice | Status | Commit |
 |:--|:--|:--|
-| M2.0 Bar blockout | Not started | |
+| M2.0 Bar blockout | Built. Waiting on Malcolm's layout check. | |
 | M2.1 Seats and cameras | Not started | |
 | M2.2 Seated patrons | Not started | |
 | M2.3 Resolve show | Not started | |
