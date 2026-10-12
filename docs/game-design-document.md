@@ -359,7 +359,7 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 
 | Name | Cost | Effect | Room effect | Cutaway | Reversal % | Reversal effect |
 |:--|:--|:--|:--|:--|:--|:--|
-| **Blackout** | 2 | Opponent's hand is face-down during their next Choose Phase (they pick blind) | Light box smashes, room goes dark, only the TVs glow | Yes | 35% | You play blind on your next turn instead |
+| **Blackout** | 2 | Opponent's hand is face-down during their next Choose Phase (they pick blind) | Light box smashes, room goes dark, only the TVs glow. Lights come back when the blind player's turn ends. Same effect on a backfire. | Yes | 35% | You play blind on your next turn instead |
 | **Short Circuit** | 1 | Steal 2 Energy from opponent at the start of their next turn | Breaker box sparks near the table | No | 20% | You lose 2 Energy at the start of your next turn |
 | **Beholder Drop** | 3 | 20 damage to opponent | Beholder sculpture swings on its chain and slams the table | No | 45% | It swings back: you take 10 damage |
 | **Spilled Drink** | 0 | Opponent's Attack cards cost +1 Energy on their next turn | Drink tips over and soaks the table | No | 15% | Your Attack cards cost +1 Energy on your next turn |

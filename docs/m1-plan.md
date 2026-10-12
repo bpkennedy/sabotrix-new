@@ -21,7 +21,7 @@
 | M1.7 Windows build | Built and zipped (`Builds/Sabotrix-Windows.zip`, not in git). Not yet run on the Windows PC. | `fa48b97` |
 | Playtest 2 | **Next:** play 5+ matches on the Windows PC, then tune numbers or start M2 | |
 
-M2 (the 3D bar) has no plan yet. Write `docs/m2-plan.md` the same way before starting it.
+M2 (the 3D bar) is planned in `docs/m2-plan.md`.
 
 ---
 
