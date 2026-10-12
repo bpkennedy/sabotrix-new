@@ -8,11 +8,15 @@ namespace Sabotrix.Core
     {
         private readonly PlayerState[] _players;
         private readonly IRandom _random;
+        private readonly List<MatchEvent> _lastTurnEvents = new List<MatchEvent>();
 
         // Set by an Ability like Haymaker; used up by the next Attack this turn.
         private bool _doubleNextAttack;
 
         public IReadOnlyList<PlayerState> Players => _players;
+
+        // What happened when the most recent turn resolved, in order.
+        public IReadOnlyList<MatchEvent> LastTurnEvents => _lastTurnEvents;
         public int TurnNumber { get; private set; }
         public int ActivePlayerIndex { get; private set; }
         public PlayerState ActivePlayer => _players[ActivePlayerIndex];
@@ -155,9 +159,11 @@ namespace Sabotrix.Core
 
             PlayerState player = ActivePlayer;
             List<CardInstance> playOrder = player.Selected.OrderBy(card => ResolveRank(card.Definition.Type)).ToList();
+            _lastTurnEvents.Clear();
 
             foreach (CardInstance card in playOrder)
             {
+                _lastTurnEvents.Add(new MatchEvent(MatchEventKind.CardPlayed, player, card.Definition));
                 Resolve(card);
                 if (TryEndMatchOnKnockout())
                 {
@@ -266,7 +272,7 @@ namespace Sabotrix.Core
 
         private void ResolveAbility(CardDefinition ability)
         {
-            ActivePlayer.Block += ability.Block;
+            GainBlock(ActivePlayer, ability.Block);
             if (ability.DoublesNextAttack)
             {
                 _doubleNextAttack = true;
@@ -307,8 +313,14 @@ namespace Sabotrix.Core
                 GainSpecialEnergy(player, attack.BonusSpecialEnergy);
             }
 
-            player.Block += attack.Block;
-            player.Hp = Math.Min(player.Hero.MaxHp, player.Hp + attack.Heal);
+            GainBlock(player, attack.Block);
+
+            int healed = Math.Min(player.Hero.MaxHp - player.Hp, attack.Heal);
+            if (healed > 0)
+            {
+                player.Hp += healed;
+                _lastTurnEvents.Add(new MatchEvent(MatchEventKind.Heal, player, attack, healed));
+            }
         }
 
         private void ResolveSabotage(CardDefinition sabotage)
@@ -320,6 +332,8 @@ namespace Sabotrix.Core
             bool backfired = sabotage.ReversalChance > 0 && _random.NextDouble() <= sabotage.ReversalChance;
             PlayerState affected = backfired ? player : target;
             int amount = backfired ? sabotage.ReversalAmount : sabotage.SabotageAmount;
+            MatchEventKind outcome = backfired ? MatchEventKind.SabotageBackfired : MatchEventKind.SabotageLanded;
+            _lastTurnEvents.Add(new MatchEvent(outcome, player, sabotage));
 
             switch (sabotage.Sabotage)
             {
@@ -343,14 +357,26 @@ namespace Sabotrix.Core
         }
 
         // Block absorbs damage first. Returns the HP actually lost.
-        private static int DealDamage(PlayerState target, int amount)
+        private int DealDamage(PlayerState target, int amount)
         {
             int absorbed = Math.Min(target.Block, amount);
             target.Block -= absorbed;
 
             int hpLost = Math.Min(target.Hp, amount - absorbed);
             target.Hp -= hpLost;
+            _lastTurnEvents.Add(new MatchEvent(MatchEventKind.Damage, target, amount: hpLost, blocked: absorbed));
             return hpLost;
+        }
+
+        private void GainBlock(PlayerState player, int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            player.Block += amount;
+            _lastTurnEvents.Add(new MatchEvent(MatchEventKind.BlockGained, player, amount: amount));
         }
 
         private static void GainSpecialEnergy(PlayerState player, int amount)

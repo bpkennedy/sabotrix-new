@@ -2,7 +2,9 @@
     "name": "Sabotrix.Game",
     "rootNamespace": "Sabotrix.Game",
     "references": [
-        "Sabotrix.Core"
+        "Sabotrix.Core",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
