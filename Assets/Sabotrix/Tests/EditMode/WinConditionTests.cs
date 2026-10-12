@@ -6,7 +6,7 @@ namespace Sabotrix.Tests.EditMode
     public class WinConditionTests
     {
         [Test]
-        public void EndTurn_OpponentHpReachesZero_ActivePlayerWins()
+        public void EndRound_OpponentHpReachesZero_HitterWins()
         {
             Match match = TestContent.CreateMatch(
                 TestContent.Hero("hitter", initiative: 1), TestContent.BrawlerDeck(),
@@ -14,22 +14,52 @@ namespace Sabotrix.Tests.EditMode
             PlayerState hitter = match.ActivePlayer;
             match.TrySelect(hitter.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.IsOver, Is.True);
             Assert.That(match.Winner, Is.SameAs(hitter));
-            Assert.That(match.Opponent.Hp, Is.EqualTo(0));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(0));
         }
 
         [Test]
-        public void EndTurn_OverkillDamage_HpStopsAtZero()
+        public void EndRound_KnockedOutInAttacks_StillHitsBackThatPhase()
+        {
+            // Attacks in a phase land together: the fragile hero's Jab still resolves after it drops to 0.
+            Match match = TestContent.CreateMatch(
+                TestContent.Hero("hitter", initiative: 1), TestContent.BrawlerDeck(),
+                TestContent.Hero("fragile", maxHp: 10), TestContent.BunkerDeck());
+            match.TrySelect(match.ActivePlayer.Hand[0]);
+
+            TestContent.EndRound(match);
+
+            Assert.That(match.Players[0].Hp, Is.EqualTo(100 - 10));
+        }
+
+        [Test]
+        public void EndRound_BothHeroesKnockedOut_IsDraw()
+        {
+            DeckDefinition jabs = TestContent.Deck(TestContent.Copies(TestContent.Jab, 8));
+            Match match = TestContent.CreateMatch(
+                TestContent.Hero("one", maxHp: 10, initiative: 1), jabs,
+                TestContent.Hero("two", maxHp: 10), jabs);
+
+            TestContent.PlayRound(match);
+
+            Assert.That(match.IsOver, Is.True);
+            Assert.That(match.Winner, Is.Null);
+            Assert.That(match.Players[0].Hp, Is.EqualTo(0));
+            Assert.That(match.Players[1].Hp, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void EndRound_OverkillDamage_HpStopsAtZero()
         {
             Match match = TestContent.CreateMatch(
                 TestContent.Hero("hitter", initiative: 1), TestContent.BrawlerDeck(),
                 TestContent.Hero("fragile", maxHp: 3), TestContent.BunkerDeck());
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(0));
         }
@@ -56,51 +86,51 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
-        public void TurnLimit_EqualHp_IsDraw()
+        public void RoundLimit_EqualHp_IsDraw()
         {
             HeroDefinition tank = TestContent.Hero("tank", maxHp: 1000);
             DeckDefinition jabs = TestContent.Deck(TestContent.Copies(TestContent.Jab, 8));
             Match match = TestContent.CreateMatch(tank, jabs, tank, jabs);
 
-            PlayTurns(match, Rules.TurnLimit);
+            PlayRounds(match, Rules.RoundLimit);
 
             Assert.That(match.IsOver, Is.True);
             Assert.That(match.Winner, Is.Null);
-            Assert.That(match.Players[0].Hp, Is.EqualTo(1000 - Rules.TurnLimit / 2 * 10));
+            Assert.That(match.Players[0].Hp, Is.EqualTo(1000 - Rules.RoundLimit * 10));
         }
 
         [Test]
-        public void TurnLimit_HigherHp_Wins()
+        public void RoundLimit_HigherHp_Wins()
         {
             DeckDefinition jabs = TestContent.Deck(TestContent.Copies(TestContent.Jab, 8));
             Match match = TestContent.CreateMatch(
                 TestContent.Hero("big", maxHp: 1000), jabs,
                 TestContent.Hero("small", maxHp: 900), jabs);
 
-            PlayTurns(match, Rules.TurnLimit);
+            PlayRounds(match, Rules.RoundLimit);
 
             Assert.That(match.IsOver, Is.True);
             Assert.That(match.Winner, Is.SameAs(match.Players[0]));
         }
 
         [Test]
-        public void TurnLimit_OneTurnBefore_MatchStillRunning()
+        public void RoundLimit_OneRoundBefore_MatchStillRunning()
         {
             HeroDefinition tank = TestContent.Hero("tank", maxHp: 1000);
             DeckDefinition jabs = TestContent.Deck(TestContent.Copies(TestContent.Jab, 8));
             Match match = TestContent.CreateMatch(tank, jabs, tank, jabs);
 
-            PlayTurns(match, Rules.TurnLimit - 1);
+            PlayRounds(match, Rules.RoundLimit - 1);
 
             Assert.That(match.IsOver, Is.False);
-            Assert.That(match.TurnNumber, Is.EqualTo(Rules.TurnLimit));
+            Assert.That(match.RoundNumber, Is.EqualTo(Rules.RoundLimit));
         }
 
-        private static void PlayTurns(Match match, int turns)
+        private static void PlayRounds(Match match, int rounds)
         {
-            for (int turn = 0; turn < turns; turn++)
+            for (int round = 0; round < rounds; round++)
             {
-                TestContent.PlayAnyAttack(match);
+                TestContent.PlayRound(match);
             }
         }
     }

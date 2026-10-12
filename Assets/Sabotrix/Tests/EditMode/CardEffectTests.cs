@@ -16,7 +16,7 @@ namespace Sabotrix.Tests.EditMode
             Match match = TestContent.PlayerHolding(card);
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - damage));
         }
@@ -30,7 +30,7 @@ namespace Sabotrix.Tests.EditMode
             match.TrySelect(player.Ability);
             match.TrySelect(player.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - (10 + 3) * 2));
         }
@@ -45,13 +45,13 @@ namespace Sabotrix.Tests.EditMode
             match.TrySelect(player.Hand[0]);
             match.TrySelect(player.Hand[1]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - 20 - 10));
         }
 
         [Test]
-        public void PotLidGuard_Resolves_GainsTwentyBlock()
+        public void PotLidGuard_Resolves_GainsTwentyBlockBeforeOpponentsAttack()
         {
             Match match = TestContent.PlayerHolding(TestContent.Pudge, null, TestContent.Jab);
             PlayerState pudge = match.ActivePlayer;
@@ -59,9 +59,10 @@ namespace Sabotrix.Tests.EditMode
             match.TrySelect(pudge.Ability);
             match.TrySelect(pudge.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
-            Assert.That(pudge.Block, Is.EqualTo(20));
+            Assert.That(match.LastRoundEvents.Single(e => e.Kind == MatchEventKind.BlockGained).Amount, Is.EqualTo(20));
+            Assert.That(pudge.Hp, Is.EqualTo(110));
         }
 
         [Test]
@@ -70,22 +71,23 @@ namespace Sabotrix.Tests.EditMode
             Match match = TestContent.PlayerHolding(TestContent.Poke);
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - 8));
             Assert.That(match.Players[0].SpecialEnergy, Is.EqualTo(2));
         }
 
         [Test]
-        public void CounterStance_Resolves_DealsSixAndGainsSixBlock()
+        public void CounterStance_ResolvesFirst_DealsSixAndBlocksSixOfOpponentsAttack()
         {
+            // The player has higher Initiative, so their Counter Stance resolves before the target's Jab (10).
             Match match = TestContent.PlayerHolding(TestContent.CounterStance);
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - 6));
-            Assert.That(match.Players[0].Block, Is.EqualTo(6));
+            Assert.That(match.Players[0].Hp, Is.EqualTo(100 - (10 - 6)));
         }
 
         [Test]
@@ -94,7 +96,7 @@ namespace Sabotrix.Tests.EditMode
             Match match = TestContent.PlayerHolding(TestContent.Hero("strong", strength: 3, initiative: 1), null, TestContent.DoubleTap);
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - (8 + 3) * 2));
             Assert.That(match.Players[0].SpecialEnergy, Is.EqualTo(2));
@@ -107,9 +109,10 @@ namespace Sabotrix.Tests.EditMode
             match.ActivePlayer.Hp = 50;
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
-            Assert.That(match.Players[0].Hp, Is.EqualTo(58));
+            // Heals 50 -> 58, then the target's Jab hits for 10.
+            Assert.That(match.Players[0].Hp, Is.EqualTo(58 - 10));
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - 10));
         }
 
@@ -120,9 +123,10 @@ namespace Sabotrix.Tests.EditMode
             match.ActivePlayer.Hp = 95;
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
-            Assert.That(match.Players[0].Hp, Is.EqualTo(100));
+            // Heals 95 -> 100 (the cap), then the target's Jab hits for 10.
+            Assert.That(match.Players[0].Hp, Is.EqualTo(100 - 10));
         }
 
         [Test]
@@ -131,7 +135,7 @@ namespace Sabotrix.Tests.EditMode
             Match match = TestContent.PlayerHolding(TestContent.BigFinish);
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(1000 - 20));
         }
@@ -145,7 +149,7 @@ namespace Sabotrix.Tests.EditMode
             match.Opponent.Block = 10;
             match.TrySelect(match.ActivePlayer.Hand[0]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
             Assert.That(match.Players[1].Hp, Is.EqualTo(25 - 20));
         }
@@ -160,9 +164,10 @@ namespace Sabotrix.Tests.EditMode
             match.TrySelect(match.ActivePlayer.Hand[0]);
             match.TrySelect(match.ActivePlayer.Hand[1]);
 
-            match.EndTurn();
+            TestContent.EndRound(match);
 
-            Assert.That(match.LastTurnEvents.Last(e => e.Kind == MatchEventKind.Damage).Amount, Is.EqualTo(25));
+            PlayerState target = match.Players[1];
+            Assert.That(match.LastRoundEvents.Last(e => e.Kind == MatchEventKind.Damage && e.Player == target).Amount, Is.EqualTo(25));
             Assert.That(match.Players[1].Hp, Is.EqualTo(0));
         }
     }

@@ -15,7 +15,8 @@
 | M2.0 Bar blockout | Done. Revised after feedback: bar counter, back-bar with bottles and mirror, stools with background patrons, neon signs, pictures. Room 10 × 10 m. | `86c7515` + revision |
 | M2.1 Seats and cameras | Done. Seat swaps are a hard cut (a blend flies through the table). | |
 | M2.2 Seated patrons | Done. Quaternius human models (CC0, see `docs/credits.md`) with sitting animations from the Universal Animation Library. Players sit idle, bar patrons sit talking. Seat tilt 12°. | |
-| M2.3 Resolve show | Done. 0.6 s blend to overhead, 0.8 s per step, click or Space skips. | |
+| M2.3 Resolve show | Done. 0.6 s blend to overhead, click or Space skips. | `61d1a72` |
+| M2.3b Rounds (feedback) | Done. Both players pick, then the round resolves together; the show reveals all cards, then each phase with both players' numbers at once. Blackout blinds everyone (card types still visible). GDD 0.3. | |
 | Playtest 3 | **Next** | |
 | M2.4 Dress the bar | Not started | |
 | M2.5 Lighting | Not started | |
@@ -83,8 +84,19 @@ Today `EndTurn` resolves instantly and the result goes straight to the log. M2 t
 
 **Done when:** every card type and both sabotage outcomes (landed, backfired) show on the table in order, and skipping jumps straight to the handoff.
 
+### M2.3b — Rounds (feedback after M2.3)
+
+Malcolm's feedback changed the turn structure (GDD 7.2, version 0.3):
+
+- **Rounds instead of alternating turns.** P1 picks, pass, P2 picks, then the round resolves: both players' Abilities, then both players' Attacks, then both players' Sabotage. The higher-Initiative player picks first and resolves first within each phase. Knockouts are checked per phase; both at 0 is a draw. 8 rounds instead of 16 turns.
+- **The show presents the round, not one player.** All played cards are revealed on the table at once (1 s), then each phase shows both players' totals together (1.2 s per phase).
+- **Blackout blinds everyone** for the next round. Blind cards still show their type and frame color, not their name, cost, or effect. A backfire blinds only the player who played it.
+- **Secret picks.** The opponent's Energy shows as it was at the start of the round, so the second picker can't read the first picker's choices.
+
 **▶ Playtest 3 (Malcolm + Brian):** play 3 matches in the editor. Check:
-- Does the show make turns easier to follow, or just slower? Is 0.8 s per step right?
+- Does the show make rounds easier to follow, or just slower? Is 1.2 s per phase right?
+- Do rounds feel good? Is picking second (lower Initiative) a disadvantage?
+- Is everyone-blind Blackout fun, and is seeing card types the right amount of info?
 - Do matches still land around 2–3 minutes?
 - Is the seat view comfortable? Can you read your hand?
 
@@ -116,7 +128,7 @@ Malcolm leads this slice (art direction). Brian handles imports.
   2. The light box sparks and drops on its chain (simple particle burst + transform move).
   3. `RoomLights` and `TableLight` go off. Only the TVs glow.
   4. Cut back to `Overhead` and continue the show.
-- The room stays dark through the blind player's next Choose Phase, and the lights come back when that turn ends (see Question 1).
+- The room stays dark through the next round's picks, and the lights come back when that round resolves (GDD 10.4).
 - A backfire plays the same room effect (see Question 2).
 
 **Done when:** in an auto-played match with a fixed seed, Blackout lands once and backfires once, and both show the cutaway, the dark room, and the lights coming back.
@@ -160,6 +172,6 @@ All proposed defaults accepted on 2026-10-11. Blackout decisions added to GDD Se
 
 ## Risks
 
-- **Match length.** The resolve show adds time to every turn. 16 turns × ~4 s is about 1 extra minute. Playtest 3 checks this. Skip and a shorter step time are the fixes.
+- **Match length.** The resolve show adds about 3–5 s per round. 8 rounds is under a minute extra. Playtest 3 checks this. Skip and shorter step times are the fixes.
 - **Asset style mismatch.** Mixing packs can look messy. Prefer one pack family for the room.
 - **Repo size.** Models and textures add up. Check LFS before each asset commit.

@@ -4,23 +4,32 @@ using System.Linq;
 
 namespace Sabotrix.Core
 {
+    // A match is played in rounds. Each round both players pick their cards in secret, one after the other,
+    // then all the picked cards resolve together, phase by phase: Abilities, then Attacks, then Sabotage.
     public sealed class Match
     {
+        private static readonly CardType[] ResolvePhases = { CardType.Ability, CardType.Attack, CardType.Sabotage };
+
         private readonly PlayerState[] _players;
         private readonly IRandom _random;
-        private readonly List<MatchEvent> _lastTurnEvents = new List<MatchEvent>();
+        private readonly List<MatchEvent> _lastRoundEvents = new List<MatchEvent>();
 
-        // Set by an Ability like Haymaker; used up by the next Attack this turn.
-        private bool _doubleNextAttack;
+        // The higher-Initiative player picks first every round and acts first within each phase.
+        private int _firstPickerIndex;
 
         public IReadOnlyList<PlayerState> Players => _players;
 
-        // What happened when the most recent turn resolved, in order.
-        public IReadOnlyList<MatchEvent> LastTurnEvents => _lastTurnEvents;
-        public int TurnNumber { get; private set; }
+        // What happened when the most recent round resolved, in order.
+        public IReadOnlyList<MatchEvent> LastRoundEvents => _lastRoundEvents;
+        public int RoundNumber { get; private set; }
+
+        // The player picking cards right now, and the other player.
         public int ActivePlayerIndex { get; private set; }
         public PlayerState ActivePlayer => _players[ActivePlayerIndex];
         public PlayerState Opponent => _players[1 - ActivePlayerIndex];
+
+        // True until the first player of the round locks in their cards.
+        public bool IsFirstPick => ActivePlayerIndex == _firstPickerIndex;
         public bool IsOver { get; private set; }
 
         // Null while the match is running, and null when it ends in a draw.
@@ -32,7 +41,7 @@ namespace Sabotrix.Core
             _random = random;
         }
 
-        // Builds the match, shuffles, deals, picks the first player, and starts turn 1.
+        // Builds the match, shuffles, deals, picks the first picker, and starts round 1.
         public static Match Create(HeroDefinition heroOne, DeckDefinition deckOne, HeroDefinition heroTwo, DeckDefinition deckTwo, IRandom random)
         {
             int nextInstanceId = 0;
@@ -54,12 +63,12 @@ namespace Sabotrix.Core
                 }
             }
 
-            match.ActivePlayerIndex = FirstPlayerIndex(heroOne, heroTwo, random);
-            match.StartTurn();
+            match._firstPickerIndex = FirstPickerIndex(heroOne, heroTwo, random);
+            match.StartRound();
             return match;
         }
 
-        // Energy cost for the active player this turn, including Sabotage cost increases.
+        // Energy cost for the picking player this round, including Sabotage cost increases.
         // Ability cards cost Special Energy instead.
         public int CostOf(CardInstance card)
         {
@@ -103,7 +112,7 @@ namespace Sabotrix.Core
             }
         }
 
-        // Selects a card for this turn and reserves its cost. Returns false if the selection isn't allowed.
+        // Selects a card for this round and reserves its cost. Returns false if the selection isn't allowed.
         public bool TrySelect(CardInstance card)
         {
             if (!CanSelect(card))
@@ -149,7 +158,8 @@ namespace Sabotrix.Core
 
         public bool CanEndTurn() => !IsOver && HasSelectedAttack(ActivePlayer);
 
-        // Resolves the selected cards, cycles them to the bottom of the deck, then starts the next turn.
+        // Locks in the picking player's cards. The first lock-in passes the pick to the other player;
+        // the second resolves the round and starts the next one.
         public void EndTurn()
         {
             if (!CanEndTurn())
@@ -157,32 +167,13 @@ namespace Sabotrix.Core
                 throw new InvalidOperationException("End Turn needs at least one Attack selected.");
             }
 
-            PlayerState player = ActivePlayer;
-            List<CardInstance> playOrder = player.Selected.OrderBy(card => ResolveRank(card.Definition.Type)).ToList();
-            _lastTurnEvents.Clear();
-
-            foreach (CardInstance card in playOrder)
+            if (IsFirstPick)
             {
-                _lastTurnEvents.Add(new MatchEvent(MatchEventKind.CardPlayed, player, card.Definition));
-                Resolve(card);
-                if (TryEndMatchOnKnockout())
-                {
-                    return;
-                }
-            }
-
-            player.CyclePlayedCards(playOrder);
-            player.IsBlind = false;
-            player.AttackCostIncrease = 0;
-
-            if (TurnNumber >= Rules.TurnLimit)
-            {
-                EndMatchByHp();
+                ActivePlayerIndex = 1 - _firstPickerIndex;
                 return;
             }
 
-            ActivePlayerIndex = 1 - ActivePlayerIndex;
-            StartTurn();
+            ResolveRound();
         }
 
         public void Forfeit(PlayerState player)
@@ -195,7 +186,7 @@ namespace Sabotrix.Core
             EndMatch(_players[0] == player ? _players[1] : _players[0]);
         }
 
-        private static int FirstPlayerIndex(HeroDefinition heroOne, HeroDefinition heroTwo, IRandom random)
+        private static int FirstPickerIndex(HeroDefinition heroOne, HeroDefinition heroTwo, IRandom random)
         {
             if (heroOne.Initiative == heroTwo.Initiative)
             {
@@ -205,18 +196,46 @@ namespace Sabotrix.Core
             return heroOne.Initiative > heroTwo.Initiative ? 0 : 1;
         }
 
-        // Cards play out Ability, then Attacks (in selection order), then Sabotage.
-        private static int ResolveRank(CardType type)
+        // Each phase resolves the faster player's cards (in selection order), then the other player's.
+        // Knockouts are checked at the end of each phase, so both heroes can go down in the same round.
+        private void ResolveRound()
         {
-            switch (type)
+            _lastRoundEvents.Clear();
+            PlayerState first = _players[_firstPickerIndex];
+            PlayerState second = _players[1 - _firstPickerIndex];
+
+            foreach (CardType phase in ResolvePhases)
             {
-                case CardType.Ability:
-                    return 0;
-                case CardType.Attack:
-                    return 1;
-                default:
-                    return 2;
+                foreach (PlayerState player in new[] { first, second })
+                {
+                    PlayerState target = player == first ? second : first;
+                    foreach (CardInstance card in player.Selected.Where(card => card.Definition.Type == phase))
+                    {
+                        _lastRoundEvents.Add(new MatchEvent(MatchEventKind.CardPlayed, player, card.Definition));
+                        Resolve(player, target, card);
+                    }
+                }
+
+                if (TryEndMatchOnKnockout())
+                {
+                    return;
+                }
             }
+
+            foreach (PlayerState player in _players)
+            {
+                player.CyclePlayedCards(ResolvePhases.SelectMany(phase => player.Selected.Where(card => card.Definition.Type == phase)).ToList());
+                player.IsBlind = false;
+                player.AttackCostIncrease = 0;
+            }
+
+            if (RoundNumber >= Rules.RoundLimit)
+            {
+                EndMatchByHp();
+                return;
+            }
+
+            StartRound();
         }
 
         private bool HasSelectedAttack(PlayerState player) =>
@@ -228,61 +247,66 @@ namespace Sabotrix.Core
                 && !player.IsSelected(card)
                 && player.Energy >= CostOf(card));
 
-        private void StartTurn()
+        // Both players draw, regain Energy, and pick up any Sabotage effects aimed at this round.
+        private void StartRound()
         {
-            TurnNumber++;
-            _doubleNextAttack = false;
-            PlayerState player = ActivePlayer;
+            RoundNumber++;
+            ActivePlayerIndex = _firstPickerIndex;
 
-            // Unused Block disappears at the start of your next turn.
-            player.Block = 0;
-
-            if (player.Hand.Count < Rules.MaxHandSize)
+            foreach (PlayerState player in _players)
             {
-                player.DrawCard();
+                // Unused Block disappears at the start of the next round.
+                player.Block = 0;
+                player.DoubleNextAttack = false;
+
+                if (player.Hand.Count < Rules.MaxHandSize)
+                {
+                    player.DrawCard();
+                }
+
+                int energyMax = player.Hero.EnergyMax;
+                player.Energy = Math.Min(energyMax, player.Energy + player.Hero.EnergyRegen + player.PendingEnergyGain);
+                player.Energy = Math.Max(0, player.Energy - player.PendingEnergyLoss);
+                player.IsBlind = player.PendingBlind;
+                player.AttackCostIncrease = player.PendingAttackCostIncrease;
+
+                player.PendingEnergyGain = 0;
+                player.PendingEnergyLoss = 0;
+                player.PendingBlind = false;
+                player.PendingAttackCostIncrease = 0;
+
+                player.RoundStartEnergy = player.Energy;
+                player.RoundStartSpecialEnergy = player.SpecialEnergy;
             }
-
-            int energyMax = player.Hero.EnergyMax;
-            player.Energy = Math.Min(energyMax, player.Energy + player.Hero.EnergyRegen + player.PendingEnergyGain);
-            player.Energy = Math.Max(0, player.Energy - player.PendingEnergyLoss);
-            player.IsBlind = player.PendingBlind;
-            player.AttackCostIncrease = player.PendingAttackCostIncrease;
-
-            player.PendingEnergyGain = 0;
-            player.PendingEnergyLoss = 0;
-            player.PendingBlind = false;
-            player.PendingAttackCostIncrease = 0;
         }
 
-        private void Resolve(CardInstance card)
+        private void Resolve(PlayerState player, PlayerState target, CardInstance card)
         {
             switch (card.Definition.Type)
             {
                 case CardType.Ability:
-                    ResolveAbility(card.Definition);
+                    ResolveAbility(player, card.Definition);
                     break;
                 case CardType.Attack:
-                    ResolveAttack(card);
+                    ResolveAttack(player, target, card);
                     break;
                 case CardType.Sabotage:
-                    ResolveSabotage(card.Definition);
+                    ResolveSabotage(player, target, card.Definition);
                     break;
             }
         }
 
-        private void ResolveAbility(CardDefinition ability)
+        private void ResolveAbility(PlayerState player, CardDefinition ability)
         {
-            GainBlock(ActivePlayer, ability.Block);
+            GainBlock(player, ability.Block);
             if (ability.DoublesNextAttack)
             {
-                _doubleNextAttack = true;
+                player.DoubleNextAttack = true;
             }
         }
 
-        private void ResolveAttack(CardInstance card)
+        private void ResolveAttack(PlayerState player, PlayerState target, CardInstance card)
         {
-            PlayerState player = ActivePlayer;
-            PlayerState target = Opponent;
             CardDefinition attack = card.Definition;
 
             // Attack damage = card damage + Strength (Basic Attack gets no Strength).
@@ -292,10 +316,10 @@ namespace Sabotrix.Core
                 damagePerHit += attack.FinisherBonus;
             }
 
-            if (_doubleNextAttack)
+            if (player.DoubleNextAttack)
             {
                 damagePerHit *= 2;
-                _doubleNextAttack = false;
+                player.DoubleNextAttack = false;
             }
 
             bool dealtDamage = false;
@@ -319,26 +343,26 @@ namespace Sabotrix.Core
             if (healed > 0)
             {
                 player.Hp += healed;
-                _lastTurnEvents.Add(new MatchEvent(MatchEventKind.Heal, player, attack, healed));
+                _lastRoundEvents.Add(new MatchEvent(MatchEventKind.Heal, player, attack, healed));
             }
         }
 
-        private void ResolveSabotage(CardDefinition sabotage)
+        private void ResolveSabotage(PlayerState player, PlayerState target, CardDefinition sabotage)
         {
-            PlayerState player = ActivePlayer;
-            PlayerState target = Opponent;
             player.SabotagesPlayed++;
 
             bool backfired = sabotage.ReversalChance > 0 && _random.NextDouble() <= sabotage.ReversalChance;
             PlayerState affected = backfired ? player : target;
             int amount = backfired ? sabotage.ReversalAmount : sabotage.SabotageAmount;
             MatchEventKind outcome = backfired ? MatchEventKind.SabotageBackfired : MatchEventKind.SabotageLanded;
-            _lastTurnEvents.Add(new MatchEvent(outcome, player, sabotage));
+            _lastRoundEvents.Add(new MatchEvent(outcome, player, sabotage));
 
             switch (sabotage.Sabotage)
             {
+                // The lights go out for everyone. On a backfire they flicker back for the opponent only.
                 case SabotageKind.Blind:
-                    affected.PendingBlind = true;
+                    player.PendingBlind = true;
+                    target.PendingBlind = !backfired || target.PendingBlind;
                     break;
                 case SabotageKind.EnergySteal:
                     affected.PendingEnergyLoss += amount;
@@ -364,7 +388,7 @@ namespace Sabotrix.Core
 
             int hpLost = Math.Min(target.Hp, amount - absorbed);
             target.Hp -= hpLost;
-            _lastTurnEvents.Add(new MatchEvent(MatchEventKind.Damage, target, amount: hpLost, blocked: absorbed));
+            _lastRoundEvents.Add(new MatchEvent(MatchEventKind.Damage, target, amount: hpLost, blocked: absorbed));
             return hpLost;
         }
 
@@ -376,7 +400,7 @@ namespace Sabotrix.Core
             }
 
             player.Block += amount;
-            _lastTurnEvents.Add(new MatchEvent(MatchEventKind.BlockGained, player, amount: amount));
+            _lastRoundEvents.Add(new MatchEvent(MatchEventKind.BlockGained, player, amount: amount));
         }
 
         private static void GainSpecialEnergy(PlayerState player, int amount)
@@ -384,22 +408,18 @@ namespace Sabotrix.Core
             player.SpecialEnergy = Math.Min(Rules.SpecialEnergyMax, player.SpecialEnergy + amount);
         }
 
-        // A backfire can knock out the player who played the Sabotage.
+        // Either hero (even the one whose Sabotage backfired) can be knocked out. Both at once is a draw.
         private bool TryEndMatchOnKnockout()
         {
-            if (Opponent.Hp <= 0)
+            bool oneDown = _players[0].Hp <= 0;
+            bool twoDown = _players[1].Hp <= 0;
+            if (!oneDown && !twoDown)
             {
-                EndMatch(ActivePlayer);
-                return true;
+                return false;
             }
 
-            if (ActivePlayer.Hp <= 0)
-            {
-                EndMatch(Opponent);
-                return true;
-            }
-
-            return false;
+            EndMatch(oneDown && twoDown ? null : oneDown ? _players[1] : _players[0]);
+            return true;
         }
 
         private void EndMatchByHp()

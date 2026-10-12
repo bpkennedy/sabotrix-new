@@ -41,12 +41,12 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
-        public void Create_NewMatch_SecondPlayerHasFiveCardsAndFirstPlayerDrewOneMore()
+        public void Create_NewMatch_BothPlayersDrewForRoundOne()
         {
             Match match = TestContent.BonkVsPudge();
 
             Assert.That(match.Players[0].Hand.Count, Is.EqualTo(Rules.StartingHandSize + 1));
-            Assert.That(match.Players[1].Hand.Count, Is.EqualTo(Rules.StartingHandSize));
+            Assert.That(match.Players[1].Hand.Count, Is.EqualTo(Rules.StartingHandSize + 1));
             Assert.That(match.Players.All(player => player.Selected.Count == 0), Is.True);
         }
 
@@ -86,7 +86,7 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
-        public void Create_HigherInitiative_GoesFirst()
+        public void Create_HigherInitiative_PicksFirst()
         {
             Match bonkFirst = TestContent.BonkVsPudge();
             Match bonkSecond = TestContent.CreateMatch(TestContent.Pudge, TestContent.BunkerDeck(), TestContent.Bonk, TestContent.BrawlerDeck());
@@ -96,7 +96,7 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
-        public void Create_InitiativeTie_RandomPicksFirstPlayer()
+        public void Create_InitiativeTie_RandomPicksFirstPicker()
         {
             HeroDefinition hero = TestContent.Hero("twin");
 
@@ -106,11 +106,12 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
-        public void Create_NewMatch_StartsOnTurnOne()
+        public void Create_NewMatch_StartsOnRoundOneWithFirstPick()
         {
             Match match = TestContent.BonkVsPudge();
 
-            Assert.That(match.TurnNumber, Is.EqualTo(1));
+            Assert.That(match.RoundNumber, Is.EqualTo(1));
+            Assert.That(match.IsFirstPick, Is.True);
             Assert.That(match.IsOver, Is.False);
         }
     }

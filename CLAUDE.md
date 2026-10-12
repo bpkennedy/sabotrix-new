@@ -70,7 +70,7 @@ UNITY=/Applications/Unity/Hub/Editor/6000.3.26f1/Unity.app/Contents/MacOS/Unity
 ```
 Assets/Sabotrix/
   Scripts/Core/      Rules engine. Pure C#. Assembly Sabotrix.Core (noEngineReferences: true)
-                     Match (rules + turn flow), PlayerState, CardDefinition, Rules (constants), MatchEvent
+                     Match (rules + round flow), PlayerState, CardDefinition, Rules (constants), MatchEvent
   Scripts/Game/      MonoBehaviours, UI, presentation. Assembly Sabotrix.Game
                      GameController (Title -> Setup -> Handoff/Match -> Results)
                      CameraDirector (on the Bar): switches Cinemachine cameras by name

@@ -21,7 +21,6 @@ namespace Sabotrix.Game.UI
         private static readonly Color SabotageColor = new Color(0.8f, 0.65f, 0.1f);
         private static readonly Color AbilityColor = new Color(0.85f, 0.55f, 0.15f);
         private static readonly Color BasicAttackColor = new Color(0.45f, 0.45f, 0.45f);
-        private static readonly Color FaceDownColor = new Color(0.25f, 0.25f, 0.32f);
 
         private Text _opponentStats;
         private Text _status;
@@ -54,11 +53,11 @@ namespace Sabotrix.Game.UI
             PlayerState player = match.ActivePlayer;
             PlayerState opponent = match.Opponent;
 
-            _opponentStats.text = MatchText.Stats(match, opponent);
+            _opponentStats.text = MatchText.Stats(match, opponent, hidePicks: true);
 
             _status.text = StatusText(match);
             _log.text = string.Join("\n", log);
-            _playerStats.text = MatchText.Stats(match, player);
+            _playerStats.text = MatchText.Stats(match, player, hidePicks: false);
 
             UiBuilder.Clear(_slots);
             AddCard(_slots, match, player.Ability, faceDown: false);
@@ -78,13 +77,13 @@ namespace Sabotrix.Game.UI
             PlayerState player = match.ActivePlayer;
             List<string> lines = new List<string>
             {
-                $"Turn {match.TurnNumber}/{Rules.TurnLimit}",
-                $"{MatchText.PlayerName(match, player)}'s turn"
+                $"Round {match.RoundNumber}/{Rules.RoundLimit}",
+                $"{MatchText.PlayerName(match, player)}'s pick"
             };
 
             if (player.IsBlind)
             {
-                lines.Add("BLACKOUT! You can't see your cards.");
+                lines.Add("BLACKOUT! You can only see what type each card is.");
             }
 
             if (player.AttackCostIncrease > 0)
@@ -138,13 +137,14 @@ namespace Sabotrix.Game.UI
             bool selected = player.IsSelected(card);
             bool playable = selected || match.CanSelect(card);
 
-            Color color = faceDown ? FaceDownColor : CardColor(card.Definition);
+            // Blind cards still show their type and color, but not what they are or whether they're playable.
+            Color color = CardColor(card.Definition);
             if (!playable && !faceDown)
             {
                 color.a = UnplayableAlpha;
             }
 
-            string label = faceDown ? "?" : MatchText.CardFace(card.Definition, card == player.Ability ? card.Definition.Cost : match.CostOf(card));
+            string label = faceDown ? $"{card.Definition.Type.ToString().ToUpperInvariant()}\n\n?" : MatchText.CardFace(card.Definition, card == player.Ability ? card.Definition.Cost : match.CostOf(card));
             if (selected)
             {
                 label = "[ SELECTED ]\n\n" + label;

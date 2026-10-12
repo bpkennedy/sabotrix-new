@@ -82,7 +82,7 @@ namespace Sabotrix.Tests.EditMode
                 TestContent.PlayAnyAttack(match);
             }
 
-            Assert.That(match.TurnNumber, Is.LessThanOrEqualTo(Rules.TurnLimit));
+            Assert.That(match.RoundNumber, Is.LessThanOrEqualTo(Rules.RoundLimit));
         }
 
         private static void AssertSameCard(CardDefinition actual, CardDefinition expected)

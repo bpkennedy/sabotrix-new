@@ -2,7 +2,7 @@
 
 | Field | Value |
 |:--|:--|
-| **Version** | 0.2 (draft) |
+| **Version** | 0.3 (draft) |
 | **Last updated** | 2026-10-11 |
 | **Status** | Pre-production. No code yet. |
 | **Engine** | Unity |
@@ -27,7 +27,7 @@ Turn-based 1v1 card battler with deck building.
 
 1. **Sabotage is a gamble.** Stronger sabotage is more likely to backfire. Backfires are annoying and funny, never game-ending.
 2. **The room is part of the game.** Sabotage changes the physical space around the table: lighting, sound, props.
-3. **Plan it, then watch it play out.** You choose your cards, then the camera pulls back and the turn plays out as a show.
+3. **Plan it, then watch it play out.** Both players choose their cards in secret, then the camera pulls back and the round plays out as a show.
 4. **Skill beats luck.** Deck choice, card order, and character choice decide most games. Luck spices them up.
 
 ### 1.4 Player Experience Goals
@@ -136,10 +136,10 @@ Soft goal: card design stays printable as a physical card game later.
 
 | Moment | Camera |
 |:--|:--|
-| **Choosing cards** | First-person from the seat of the player whose turn it is. Your hand is in front of you, your opponent sits across with face-down cards, the bar is around you. |
-| **Resolving the turn** | Cuts to directly overhead, looking down at the table while the chosen cards play out in order. |
+| **Choosing cards** | First-person from the seat of the player who is picking. Your hand is in front of you, your opponent sits across with face-down cards, the bar is around you. |
+| **Resolving the round** | After both players have picked, the camera moves directly overhead. Both players' cards are revealed on the table together, then each phase (Abilities, Attacks, Sabotage) plays out for both players at once, showing each player's numbers. |
 | **Sabotage cutaways** | Some Sabotage cards cut to the prop they affect (Blackout cuts to the light box). Others play out at the table. Each Sabotage card has a Cutaway yes/no setting. |
-| **Hot-seat handoff** | Between turns, a "Pass to [Player]" screen hides the hand so the other player can't peek. |
+| **Hot-seat handoff** | Between picks, a "Pass to [Player]" screen hides the hand so the other player can't peek. |
 
 ---
 
@@ -149,8 +149,8 @@ Soft goal: card design stays printable as a physical card game later.
 Match start
   → Each player picks a hero + prebuilt deck
   → Shuffle, draw 5
-  → Repeat turns:
-       Draw 1 → Choose cards (first-person) → End Turn → Cards resolve (overhead) → Check win
+  → Repeat rounds:
+       Both draw 1 → P1 chooses cards (first-person) → pass → P2 chooses cards → Reveal and resolve (overhead) → Check win
   → Match end: winner shown
 ```
 
@@ -164,47 +164,52 @@ Match start
 2. Each player has their **own** deck. Each deck is shuffled once.
 3. Each player draws 5 cards.
 4. Energy starts at Energy Max. Special Energy starts at 0.
-5. The player whose hero has higher **Initiative** goes first. Tie: random.
+5. The player whose hero has higher **Initiative** picks first every round, and their cards resolve first within each phase. Tie: random. **[DEFAULT]**
 
-### 7.2 Turn Structure
+### 7.2 Round Structure
 
-**1. Start of Turn**
+A match is played in **rounds**. Each round both players pick their cards in secret, then everything resolves together.
+
+**1. Start of Round** (both players)
 - Draw 1 card from the top of your deck. If your hand is full (7 cards), skip the draw.
 - Gain Energy equal to your hero's Energy Regen (up to Energy Max).
-- Apply any "at start of your turn" Sabotage effects.
+- Apply any "at the start of the next round" Sabotage effects.
+- Block left over from the last round disappears.
 
 **2. Choose Phase** (first-person camera)
+
+The players pick one after the other (higher Initiative first), passing the seat in between. Picks are secret: while you pick, you see your opponent's Energy as it was at the start of the round. **[DEFAULT]**
 
 Select cards in any order. They always play out in this order:
 
 | Step | Card | Rule |
 |:--|:--|:--|
-| 1 | Ability (optional) | Max 1 per turn. Costs Special Energy. Must be followed by another card. |
+| 1 | Ability (optional) | Max 1 per round. Costs Special Energy. Must be followed by another card. |
 | 2 | Attack(s) | At least 1 required. Costs Energy. |
-| 3 | Sabotage (optional) | Max 1 per turn. Must be last. |
+| 3 | Sabotage (optional) | Max 1 per round. Must be last. |
 
 - Energy is reserved as you select cards.
 - **Withdraw:** you can take back any selected card before pressing End Turn. Its cost is refunded.
 - **Basic Attack:** if you can't afford any Attack card in your hand (or have none), you may select the Basic Attack instead.
 - **End Turn** is only enabled when your selection is legal (at least 1 Attack, ordering rules met). Pressing it locks in your cards.
 
-**3. Resolve Phase** (overhead camera)
-- Chosen cards play out in order: Ability → Attacks → Sabotage.
+**3. Resolve Phase** (overhead camera, after both players lock in)
+- Both players' cards are revealed, then resolve phase by phase: both players' Abilities, then both players' Attacks, then both players' Sabotage.
+- Within a phase, the higher-Initiative player's cards resolve first, in the order they were selected. **[DEFAULT]**
 - Each Attack that deals damage earns Special Energy (see 7.4).
-- If a hero's HP reaches 0, the match ends immediately.
+- Knockouts are checked at the end of each phase, so a hero at 0 HP still finishes that phase. If a hero is at 0 HP, the match ends. If both are, it's a draw.
 
-**4. End of Turn**
-- All played cards go face-down to the **bottom** of your deck. The deck is never reshuffled, so cards come back around in a predictable order.
-- Turn passes to the other player.
+**4. End of Round**
+- All played cards go face-down to the **bottom** of their owner's deck. The deck is never reshuffled, so cards come back around in a predictable order.
 
 ### 7.3 Card Types
 
 | Type | Where it lives | Cost | Limits |
 |:--|:--|:--|:--|
-| **Attack** | Deck / hand | Energy | At least 1 per turn |
-| **Sabotage** | Deck / hand | Energy (can be 0) | 1 per turn, 3 per match |
-| **Ability** | Separate Ability slot next to your hero (never in deck) | Special Energy | 1 per turn, can't be last |
-| **Basic Attack** | Always available, not a card in your deck | 0 Energy | 5 damage, no Strength bonus. Only when you can't afford any Attack card. Counts as your Attack for the turn. |
+| **Attack** | Deck / hand | Energy | At least 1 per round |
+| **Sabotage** | Deck / hand | Energy (can be 0) | 1 per round, 3 per match |
+| **Ability** | Separate Ability slot next to your hero (never in deck) | Special Energy | 1 per round, can't be last |
+| **Basic Attack** | Always available, not a card in your deck | 0 Energy | 5 damage, no Strength bonus. Only when you can't afford any Attack card. Counts as your Attack for the round. |
 
 **Dead Sabotage cards:** once you have played 3 Sabotage cards in a match, any Sabotage card in your hand is dead. It can't be played and stays in your hand.
 
@@ -214,7 +219,7 @@ Select cards in any order. They always play out in this order:
 |:--|:--|
 | **Energy** | Spent on Attack and Sabotage cards. Starts at Energy Max. |
 | **Energy Max** | Energy cap. |
-| **Energy Regen** | Energy gained at the start of each turn. |
+| **Energy Regen** | Energy gained at the start of each round. |
 | **Special Energy** | Spent on Ability cards. Separate pool. Starts at 0, max 6. **[DEFAULT]** |
 | **Special Energy Gain** | Special Energy earned each time one of your Attacks deals damage to your opponent. |
 
@@ -228,7 +233,7 @@ Damage taken   = Attack damage − Block (Block is used up first)
 ```
 
 - Strength applies to Attack cards only (not Basic Attack, not Sabotage).
-- **Block** absorbs damage. Unused Block disappears at the start of your next turn.
+- **Block** absorbs damage. Unused Block disappears at the start of the next round.
 
 ### 7.6 Sabotage & Reversal
 
@@ -256,7 +261,8 @@ Reversal effects must be:
 |:--|:--|
 | Opponent's HP reaches 0 | You win |
 | Opponent forfeits | You win |
-| 16 total turns played (8 each) **[DEFAULT]** | Higher HP wins. Tie = draw. |
+| Both heroes reach 0 HP in the same round | Draw |
+| 8 rounds played **[DEFAULT]** | Higher HP wins. Tie = draw. |
 
 ### 7.8 Rule Details
 
@@ -265,14 +271,15 @@ Reversal effects must be:
 | **Block** | Absorbs all damage, including Sabotage damage (e.g. Beholder Drop). |
 | **Healing** | Can't go above the hero's starting HP. |
 | **Basic Attack** | Earns Special Energy when it deals damage, like any Attack. |
-| **Haymaker** | Doubles (card damage + Strength) of the next Attack, including Big Finish's bonus, both Double Tap hits, or Basic Attack. |
+| **Haymaker** | Doubles (card damage + Strength) of your next Attack this round, including Big Finish's bonus, both Double Tap hits, or Basic Attack. |
+| **Block in the Attack phase** | Block gained from an Attack card (Counter Stance) only stops Attacks that resolve after it. The higher-Initiative player's Counter Stance can block the other player's Attacks that round; the slower player's comes too late. |
 | **Special Energy gain** | Earned only when an Attack removes HP. A fully blocked Attack earns none. Poke's +1 bonus follows the same rule. |
-| **Backfire knockout** | If a backfire drops the saboteur to 0 HP, the opponent wins. |
-| **Big Finish** | Checks opponent HP at the moment Big Finish resolves (after earlier Attacks this turn). |
-| **Short Circuit** | Opponent loses 2 Energy at the start of their next turn (after Regen). The player who played it gains 2 Energy at the start of their own next turn (up to Max). |
-| **Spilled Drink** | The +1 cost applies to Attack cards only, not Basic Attack. |
-| **Blackout (blind play)** | If a blind pick can't be afforded or breaks ordering rules, the card is revealed briefly and returns to the hand. No penalty. |
-| **Turn limit** | Each player's turn counts as 1. 16 total = 8 each. |
+| **Backfire knockout** | If a backfire drops the saboteur to 0 HP, the opponent wins (a draw if both heroes are at 0). |
+| **Big Finish** | Checks opponent HP at the moment Big Finish resolves (after your earlier Attacks this round, and the opponent's if they resolved first). |
+| **Short Circuit** | Opponent loses 2 Energy at the start of the next round (after Regen). The player who played it gains 2 Energy at the start of the next round (up to Max). |
+| **Spilled Drink** | The +1 cost applies next round, to Attack cards only, not Basic Attack. |
+| **Blackout (blind play)** | Playing blind, you can see each card's type (Attack, Sabotage) and its frame color, but not its name, cost, or effect. If a blind pick can't be afforded or breaks ordering rules, the card is revealed briefly and returns to the hand. No penalty. |
+| **Round limit** | 8 rounds. Each round both players pick once. (Was 16 alternating turns, 8 each.) |
 
 ### 7.9 Removed for MVP
 
@@ -325,7 +332,7 @@ For MVP, players choose from **prebuilt decks**. Collection and deck building co
 
 ## 10. Starter Content (MVP)
 
-Heroes (10.1) are approved. Cards and all numbers are starting values to tune through playtesting. Numbers target a match of roughly 3–5 turns per player.
+Heroes (10.1) are approved. Cards and all numbers are starting values to tune through playtesting. Numbers target a match of roughly 3–5 rounds.
 
 ### 10.1 Heroes
 
@@ -344,7 +351,7 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 
 | Hero | Name | Cost (SE) | Effect |
 |:--|:--|:--|:--|
-| Bonk | **Haymaker** | 3 | Your next Attack this turn deals double damage. |
+| Bonk | **Haymaker** | 3 | Your next Attack this round deals double damage. |
 | Pudge | **Pot Lid Guard** | 3 | Gain 20 Block. |
 
 ### 10.3 Attack Cards
@@ -364,10 +371,10 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 
 | Name | Cost | Effect | Room effect | Cutaway | Reversal % | Reversal effect |
 |:--|:--|:--|:--|:--|:--|:--|
-| **Blackout** | 2 | Opponent's hand is face-down during their next Choose Phase (they pick blind) | Light box smashes, room goes dark, only the TVs glow. Lights come back when the blind player's turn ends. Same effect on a backfire. | Yes | 35% | You play blind on your next turn instead |
-| **Short Circuit** | 1 | Steal 2 Energy from opponent at the start of their next turn | Breaker box sparks near the table | No | 20% | You lose 2 Energy at the start of your next turn |
+| **Blackout** | 2 | Everyone plays blind next round: you can see card types, not what they are | Light box smashes, room goes dark, only the TVs glow. Lights come back after next round's picks. Same effect on a backfire. | Yes | 35% | Only you play blind next round |
+| **Short Circuit** | 1 | Steal 2 Energy from opponent at the start of the next round | Breaker box sparks near the table | No | 20% | You lose 2 Energy at the start of the next round |
 | **Beholder Drop** | 3 | 20 damage to opponent | Beholder sculpture swings on its chain and slams the table | No | 45% | It swings back: you take 10 damage |
-| **Spilled Drink** | 0 | Opponent's Attack cards cost +1 Energy on their next turn | Drink tips over and soaks the table | No | 15% | Your Attack cards cost +1 Energy on your next turn |
+| **Spilled Drink** | 0 | Opponent's Attack cards cost +1 Energy next round | Drink tips over and soaks the table | No | 15% | Your Attack cards cost +1 Energy next round |
 
 ### 10.5 Prebuilt Decks
 
@@ -396,7 +403,7 @@ Heroes (10.1) are approved. Cards and all numbers are starting values to tune th
 | Title | Play, Quit |
 | Match setup | Each player picks hero + prebuilt deck |
 | Hot-seat handoff | "Pass to [Player]" + Ready button |
-| Match HUD | HP, Block, Energy, Special Energy, cards left in deck, sabotages used (x/3), turn counter, End Turn button |
+| Match HUD | HP, Block, Energy, Special Energy, cards left in deck, sabotages used (x/3), round counter, End Turn button |
 | Results | Winner, Rematch, Main menu |
 
 ---
@@ -482,7 +489,8 @@ Design the rules engine so it does not depend on UI or camera code. That keeps a
 | **Hero / Character** | The toon on your Character card. Has class, stats, and one Ability. |
 | **Patron** | A human player seated at the bar table. |
 | **Hot-seat** | Two players take turns on the same PC. |
-| **Block** | Absorbs incoming damage until the start of your next turn. |
+| **Round** | Both players pick their cards in secret, then all the picked cards resolve together. |
+| **Block** | Absorbs incoming damage until the start of the next round. |
 | **Withdraw** | Take back a selected card before End Turn and refund its cost. |
 | **Room effect** | A change to the 3D bar caused by a Sabotage card. |
 | **Cutaway** | Camera cuts to the bar prop a Sabotage card affects. |

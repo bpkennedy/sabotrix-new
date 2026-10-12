@@ -16,11 +16,18 @@ namespace Sabotrix.Core
         public int SpecialEnergy { get; internal set; }
         public int SabotagesPlayed { get; internal set; }
 
-        // Sabotage effects active during this player's current turn.
+        // What the opponent sees while picks are secret: Energy and Special Energy before any cards were picked.
+        public int RoundStartEnergy { get; internal set; }
+        public int RoundStartSpecialEnergy { get; internal set; }
+
+        // Sabotage effects active during this round. Blind: you can see your cards' types but not what they are.
         public bool IsBlind { get; internal set; }
         public int AttackCostIncrease { get; internal set; }
 
-        // Sabotage effects waiting for this player's next turn to start.
+        // Set by an Ability like Haymaker; used up by this player's next Attack this round.
+        internal bool DoubleNextAttack { get; set; }
+
+        // Sabotage effects waiting for the next round to start.
         internal bool PendingBlind { get; set; }
         internal int PendingEnergyGain { get; set; }
         internal int PendingEnergyLoss { get; set; }
@@ -33,10 +40,10 @@ namespace Sabotrix.Core
         // Index 0 is the top of the deck.
         public IReadOnlyList<CardInstance> Deck => _deck;
 
-        // Selected cards stay in the hand until the turn resolves.
+        // Selected cards stay in the hand until the round resolves.
         public IReadOnlyList<CardInstance> Hand => _hand;
 
-        // Cards chosen this turn, in the order they were selected.
+        // Cards chosen this round, in the order they were selected.
         public IReadOnlyList<CardInstance> Selected => _selected;
 
         internal PlayerState(HeroDefinition hero, IEnumerable<CardInstance> deck, CardInstance ability, CardInstance basicAttack)

@@ -68,17 +68,17 @@ namespace Sabotrix.Tests.EditMode
                 maxHp, strength, initiative, energyMax, energyRegen, specialEnergyGain: 1,
                 ability: Haymaker);
 
-        // Bonk (Initiative 5) goes first. Decks stay in listed order:
-        // Bonk's hand is Jab, Jab, Swing, Swing, Body Slam + Body Slam drawn on turn 1.
-        // Pudge's hand is Jab, Jab, Poke, Swing, Counter Stance.
+        // Bonk (Initiative 5) picks first. Decks stay in listed order, and both players draw a 6th card for round 1:
+        // Bonk's hand is Jab, Jab, Swing, Swing, Body Slam, Body Slam.
+        // Pudge's hand is Jab, Jab, Poke, Swing, Counter Stance, Counter Stance.
         public static Match BonkVsPudge() =>
             Match.Create(Bonk, BrawlerDeck(), Pudge, BunkerDeck(), new IdentityRandom());
 
         public static Match CreateMatch(HeroDefinition heroOne, DeckDefinition deckOne, HeroDefinition heroTwo, DeckDefinition deckTwo, IRandom random = null) =>
             Match.Create(heroOne, deckOne, heroTwo, deckTwo, random ?? new IdentityRandom());
 
-        // Player one ("player", Initiative 1) goes first holding the given cards in order, topped up with Jabs.
-        // Player two ("target", 1000 HP) holds Jabs.
+        // Player one ("player", 100 HP, Initiative 1) picks first holding the given cards in order, topped up with Jabs.
+        // Player two ("target", 1000 HP) holds Jabs, and Jabs the player for 10 whenever a test ends the round.
         public static Match PlayerHolding(HeroDefinition player, IRandom random, params CardDefinition[] cards)
         {
             DeckDefinition deck = Deck(cards.Concat(Copies(Jab, 6 - cards.Length)));
@@ -89,7 +89,7 @@ namespace Sabotrix.Tests.EditMode
         public static Match PlayerHolding(params CardDefinition[] cards) =>
             PlayerHolding(Hero("player", initiative: 1), null, cards);
 
-        // Selects the first affordable Attack card in hand (or Basic Attack), then ends the turn.
+        // The picking player selects the first affordable Attack card in hand (or Basic Attack) and locks in.
         public static void PlayAnyAttack(Match match)
         {
             PlayerState player = match.ActivePlayer;
@@ -98,6 +98,20 @@ namespace Sabotrix.Tests.EditMode
 
             match.TrySelect(attack);
             match.EndTurn();
+        }
+
+        // Locks in the first picker's current selection, then the second picker plays any Attack, which resolves the round.
+        public static void EndRound(Match match)
+        {
+            match.EndTurn();
+            PlayAnyAttack(match);
+        }
+
+        // Both players play any Attack.
+        public static void PlayRound(Match match)
+        {
+            PlayAnyAttack(match);
+            PlayAnyAttack(match);
         }
     }
 }

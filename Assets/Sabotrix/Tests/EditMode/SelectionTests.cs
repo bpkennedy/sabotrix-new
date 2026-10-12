@@ -19,6 +19,20 @@ namespace Sabotrix.Tests.EditMode
         }
 
         [Test]
+        public void TrySelect_AffordableAttack_RoundStartEnergyUnchanged()
+        {
+            Match match = TestContent.BonkVsPudge();
+            PlayerState bonk = match.ActivePlayer;
+            bonk.SpecialEnergy = 3;
+
+            match.TrySelect(bonk.Hand[2]);
+            match.TrySelect(bonk.Ability);
+
+            Assert.That(bonk.RoundStartEnergy, Is.EqualTo(6));
+            Assert.That(bonk.RoundStartSpecialEnergy, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TrySelect_UnaffordableAttack_ReturnsFalse()
         {
             Match match = TestContent.BonkVsPudge();

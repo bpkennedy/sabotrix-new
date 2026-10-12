@@ -12,11 +12,16 @@ namespace Sabotrix.Game.UI
             return $"P{number} {player.Hero.Name}";
         }
 
-        public static string Stats(Match match, PlayerState player) =>
-            $"{PlayerName(match, player)} ({player.Hero.Class})   " +
-            $"HP {player.Hp}/{player.Hero.MaxHp}   Block {player.Block}   " +
-            $"Energy {player.Energy}/{player.Hero.EnergyMax}   Special {player.SpecialEnergy}/{Rules.SpecialEnergyMax}   " +
-            $"Hand {player.Hand.Count}   Deck {player.Deck.Count}   Sabotage {player.SabotagesPlayed}/{Rules.MaxSabotagesPerMatch}";
+        // hidePicks: show Energy as it was at the start of the round, so the opponent's secret picks don't show.
+        public static string Stats(Match match, PlayerState player, bool hidePicks)
+        {
+            int energy = hidePicks ? player.RoundStartEnergy : player.Energy;
+            int specialEnergy = hidePicks ? player.RoundStartSpecialEnergy : player.SpecialEnergy;
+            return $"{PlayerName(match, player)} ({player.Hero.Class})   " +
+                $"HP {player.Hp}/{player.Hero.MaxHp}   Block {player.Block}   " +
+                $"Energy {energy}/{player.Hero.EnergyMax}   Special {specialEnergy}/{Rules.SpecialEnergyMax}   " +
+                $"Hand {player.Hand.Count}   Deck {player.Deck.Count}   Sabotage {player.SabotagesPlayed}/{Rules.MaxSabotagesPerMatch}";
+        }
 
         public static string CardFace(CardDefinition card, int cost)
         {
@@ -85,8 +90,8 @@ namespace Sabotrix.Game.UI
             switch (card.Sabotage)
             {
                 case SabotageKind.Blind:
-                    yield return "Foe plays blind next turn";
-                    yield return $"{Percent(card)} backfire: you play blind";
+                    yield return "Everyone plays blind next round";
+                    yield return $"{Percent(card)} backfire: only you play blind";
                     break;
                 case SabotageKind.EnergySteal:
                     yield return $"Steal {card.SabotageAmount} Energy";
@@ -97,7 +102,7 @@ namespace Sabotrix.Game.UI
                     yield return $"{Percent(card)} backfire: you take {card.ReversalAmount}";
                     break;
                 case SabotageKind.AttackCostIncrease:
-                    yield return $"Foe's Attacks +{card.SabotageAmount} cost next turn";
+                    yield return $"Foe's Attacks +{card.SabotageAmount} cost next round";
                     yield return $"{Percent(card)} backfire: yours +{card.ReversalAmount}";
                     break;
             }

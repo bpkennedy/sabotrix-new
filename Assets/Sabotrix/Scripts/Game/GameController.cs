@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Sabotrix.Game
 {
-    // Runs the hot-seat game loop: Title -> Setup -> (Handoff -> Match) per turn -> Results.
+    // Runs the hot-seat game loop: Title -> Setup -> per round (Handoff -> pick, Handoff -> pick, Resolve show) -> Results.
     public sealed class GameController : MonoBehaviour
     {
         private const int MaxLogLines = 24;
@@ -102,11 +102,11 @@ namespace Sabotrix.Game
 
             _log.Clear();
             string firstPlayer = MatchText.PlayerName(_match, _match.ActivePlayer);
-            AddLog($"Match start. {firstPlayer} goes first.");
-            ShowHandoff($"{firstPlayer} goes first (higher Initiative, or a coin flip on a tie).");
+            AddLog($"Match start. {firstPlayer} picks first each round.");
+            ShowHandoff($"{firstPlayer} picks first each round (higher Initiative, or a coin flip on a tie).");
         }
 
-        // Hides the hands between turns so the next player can take the seat without peeking.
+        // Hides the hands between picks so the next player can take the seat without peeking.
         // Meanwhile the camera moves to the next player's seat behind the handoff screen.
         private void ShowHandoff(string body)
         {
@@ -126,14 +126,14 @@ namespace Sabotrix.Game
             Render();
         }
 
-        private void ShowResults(string lastTurn)
+        private void ShowResults(string lastRound)
         {
             _matchScreen.Hide();
             string title = _match.Winner == null ? "DRAW!" : $"{MatchText.PlayerName(_match, _match.Winner).ToUpperInvariant()} WINS!";
             string finalHp = string.Join("\n", _match.Players.Select(player =>
                 $"{MatchText.PlayerName(_match, player)}: {player.Hp}/{player.Hero.MaxHp} HP"));
 
-            _menu.Show(title, $"{lastTurn}\n\n{finalHp}\nTurns played: {_match.TurnNumber}", new[]
+            _menu.Show(title, $"{lastRound}\n\n{finalHp}\nRounds played: {_match.RoundNumber}", new[]
             {
                 new MenuButton("REMATCH", StartMatch),
                 new MenuButton("MAIN MENU", ShowTitle)
@@ -163,20 +163,28 @@ namespace Sabotrix.Game
                 return;
             }
 
-            int turn = _match.TurnNumber;
+            string picker = MatchText.PlayerName(_match, _match.ActivePlayer);
+            int round = _match.RoundNumber;
             int[] hpBefore = _match.Players.Select(player => player.Hp).ToArray();
             int[] blockBefore = _match.Players.Select(player => player.Block).ToArray();
             _match.EndTurn();
 
-            List<string> turnLines = _match.LastTurnEvents.Select(matchEvent => MatchText.Describe(_match, matchEvent)).ToList();
-            AddLog($"--- Turn {turn} ---");
-            turnLines.ForEach(AddLog);
-            string lastTurn = $"Turn {turn}:\n{string.Join("\n", turnLines)}";
-            StartCoroutine(PlayTurn(lastTurn, hpBefore, blockBefore));
+            // First lock-in of the round: the other player picks next. Nothing has resolved yet.
+            if (!_match.IsOver && !_match.IsFirstPick)
+            {
+                ShowHandoff($"{picker} has locked in their cards.");
+                return;
+            }
+
+            List<string> roundLines = _match.LastRoundEvents.Select(matchEvent => MatchText.Describe(_match, matchEvent)).ToList();
+            AddLog($"--- Round {round} ---");
+            roundLines.ForEach(AddLog);
+            string lastRound = $"Round {round}:\n{string.Join("\n", roundLines)}";
+            StartCoroutine(PlayRound(lastRound, hpBefore, blockBefore));
         }
 
-        // Watch the turn play out from overhead, then pass the seat (or show the winner).
-        private IEnumerator PlayTurn(string lastTurn, int[] hpBefore, int[] blockBefore)
+        // Both players have picked: watch the round play out from overhead, then pass the seat (or show the winner).
+        private IEnumerator PlayRound(string lastRound, int[] hpBefore, int[] blockBefore)
         {
             _matchScreen.Hide();
             _seatedPlayers.Show(_match.Players, SeatedPlayers.NoneHidden);
@@ -185,11 +193,11 @@ namespace Sabotrix.Game
 
             if (_match.IsOver)
             {
-                ShowResults(lastTurn);
+                ShowResults(lastRound);
             }
             else
             {
-                ShowHandoff(lastTurn);
+                ShowHandoff(lastRound);
             }
         }
 
