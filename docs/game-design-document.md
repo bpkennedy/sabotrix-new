@@ -253,7 +253,21 @@ Reversal effects must be:
 | Opponent forfeits | You win |
 | 30 total turns played (15 each) **[DEFAULT]** | Higher HP wins. Tie = draw. |
 
-### 7.8 Removed for MVP
+### 7.8 Rule Details
+
+| Topic | Rule |
+|:--|:--|
+| **Block** | Absorbs all damage, including Sabotage damage (e.g. Beholder Drop). |
+| **Healing** | Can't go above the hero's starting HP. |
+| **Basic Attack** | Earns Special Energy when it deals damage, like any Attack. |
+| **Haymaker** | Doubles (card damage + Strength). |
+| **Big Finish** | Checks opponent HP at the moment Big Finish resolves (after earlier Attacks this turn). |
+| **Short Circuit** | Opponent loses 2 Energy at the start of their next turn (after Regen). The player who played it gains 2 Energy at the start of their own next turn (up to Max). |
+| **Spilled Drink** | The +1 cost applies to Attack cards only, not Basic Attack. |
+| **Blackout (blind play)** | If a blind pick can't be afforded or breaks ordering rules, the card is revealed briefly and returns to the hand. No penalty. |
+| **Turn limit** | Each player's turn counts as 1. 30 total = 15 each. |
+
+### 7.9 Removed for MVP
 
 - **Accuracy:** removed. Cards always hit, so the only luck is Sabotage reversal.
 - **Gain Energy at 0:** removed. Basic Attack covers being out of Energy.
