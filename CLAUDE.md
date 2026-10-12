@@ -30,7 +30,7 @@ Turn-based 1v1 card battler set in a nerd bar, where Sabotage cards mess with th
 
 ## Unity CLI
 
-**Only one Unity process can open the project at a time.** If the editor is open, batch mode fails. Before running a batch command, check for a running editor with `pgrep -fl "Unity.app/Contents/MacOS/Unity"`. If it is running, ask Brian to close it.
+**Only one Unity process can open the project at a time.** If the editor is open, batch mode fails. Before running a batch command, check for a running editor with `pgrep -f "Unity.app/Contents/MacOS/Unity" >/dev/null && echo running` (don't print the process args; they contain an access token). If it is running, ask Brian to close it.
 
 ```bash
 UNITY=/Applications/Unity/Hub/Editor/6000.3.26f1/Unity.app/Contents/MacOS/Unity

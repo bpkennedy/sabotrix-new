@@ -1,0 +1,16 @@
+{
+    "name": "Sabotrix.Game",
+    "rootNamespace": "Sabotrix.Game",
+    "references": [
+        "Sabotrix.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
