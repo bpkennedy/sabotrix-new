@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16eaa7bdd1564d3ca3c7d10dbc8ae0b, type: 3}
+  m_Name: Brawler
+  m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.Data.DeckData
+  _displayName: Brawler
+  _cards:
+  - Card: {fileID: 11400000, guid: c10f28a33b1334228b68b7ed9f06401f, type: 2}
+    Count: 2
+  - Card: {fileID: 11400000, guid: da4969dea8c244165aa98e5d8ffe7a98, type: 2}
+    Count: 2
+  - Card: {fileID: 11400000, guid: db092ed51eb1a466b8bef13dafe251f4, type: 2}
+    Count: 2
+  - Card: {fileID: 11400000, guid: 8538e2d22f1564a93a18b8f8b8bd5eed, type: 2}
+    Count: 1
+  - Card: {fileID: 11400000, guid: 14a1d8151cd844d63a3e6bdabe6cf419, type: 2}
+    Count: 1
+  - Card: {fileID: 11400000, guid: 4b36474457df045cb831d42214b5369a, type: 2}
+    Count: 1
+  - Card: {fileID: 11400000, guid: e29f5c223b6634337b04bffe9607c2eb, type: 2}
+    Count: 1
+  - Card: {fileID: 11400000, guid: dabf839bed7de4d038aabcecda004aaa, type: 2}
+    Count: 1

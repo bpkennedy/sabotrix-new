@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a81133f636e5a47bc8efebfd0b4df660, type: 3}
+  m_Name: Bonk
+  m_EditorClassIdentifier: Sabotrix.Game::Sabotrix.Game.Data.HeroData
+  _displayName: Bonk
+  _class: 0
+  _maxHp: 160
+  _strength: 3
+  _initiative: 5
+  _energyMax: 6
+  _energyRegen: 3
+  _specialEnergyGain: 1
+  _ability: {fileID: 11400000, guid: 56c1a7e6acdfe49b5ad67275b5bb2f29, type: 2}

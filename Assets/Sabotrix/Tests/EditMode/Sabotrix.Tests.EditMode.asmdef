@@ -3,6 +3,7 @@
     "rootNamespace": "Sabotrix.Tests.EditMode",
     "references": [
         "Sabotrix.Core",
+        "Sabotrix.Game",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
