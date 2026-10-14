@@ -18,8 +18,8 @@
 | M2.3 Resolve show | Done. 0.6 s blend to overhead, click or Space skips. | `61d1a72` |
 | M2.3b Rounds (feedback) | Done. Both players pick, then the round resolves together; the show reveals all cards, then each phase with both players' numbers at once. Blackout blinds everyone (card types still visible). GDD 0.3. | |
 | Playtest 3 | **Next** | |
-| M2.4 Dress the bar | Not started | |
-| M2.5 Lighting | Not started | |
+| M2.4 Dress the bar | Waiting on Malcolm's asset picks. Done after M2.5. | |
+| M2.5 Lighting | Done. Realtime lights wired to Room / Tv / Table switches (`RoomLighting`), dim warm ambient, bloom + vignette. TempLight removed. | |
 | M2.6 Blackout room effect | Not started | |
 | M2.7 Windows build | Not started | |
 | Playtest 4 | Not started | |

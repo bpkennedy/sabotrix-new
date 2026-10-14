@@ -9,7 +9,7 @@ Turn-based 1v1 card battler set in a nerd bar, where Sabotage cards mess with th
 
 - `docs/game-design-document.md` (GDD) defines the game. Do not invent rules, cards, or numbers. If the GDD is silent or ambiguous, ask instead of guessing.
 - When a rule changes, update the GDD in the same change.
-- `docs/m1-plan.md` is the current milestone plan. Its **Status** table says what's done and what's next. Update it as slices finish.
+- `docs/m2-plan.md` is the current milestone plan (`docs/m1-plan.md` is done). Its **Status** table says what's done and what's next. Update it as slices finish.
 
 ## Working With This Team
 
@@ -75,7 +75,8 @@ Assets/Sabotrix/
                      GameController (Title -> Setup -> Handoff/Match -> Results)
                      CameraDirector (on the Bar): switches Cinemachine cameras by name
                      SeatedPlayers (on the Bar): hides your own patron, shows the opponent's card backs
-                     ResolveShow (on the Bar): replays LastTurnEvents over the table from the overhead camera
+                     ResolveShow (on the Bar): replays LastRoundEvents over the table from the overhead camera
+                     RoomLighting (on the Bar): light switches (Room, Tv, Table) for RoomLight props
     Data/            CardData, HeroData, DeckData ScriptableObject types
     UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
   Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor
@@ -86,7 +87,8 @@ Assets/Sabotrix/
   Art/Blockout/      Flat-color materials for the bar blockout
   Art/Characters/    Quaternius human models (Humanoid rig). Credits in docs/credits.md
   Art/Animations/    Universal Animation Library FBX + sitting Animator Controllers
-  Scenes/Main.unity  The only scene (camera, Bar, TempLight, Game object with GameController)
+  Art/Lighting/      Post-processing Volume profile (bloom, vignette)
+  Scenes/Main.unity  The only scene (camera with CinemachineBrain, Bar, Game object with GameController). All lights live in the Bar.
   Tests/EditMode/    Assembly Sabotrix.Tests.EditMode. TestContent mirrors GDD Section 10.
 ```
 

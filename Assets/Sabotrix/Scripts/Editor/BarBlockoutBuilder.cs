@@ -5,6 +5,8 @@ using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Sabotrix.Editor
 {
@@ -20,6 +22,7 @@ namespace Sabotrix.Editor
         private const string CharacterFolder = "Assets/Sabotrix/Art/Characters";
         private const string AnimationFolder = "Assets/Sabotrix/Art/Animations";
         private const string AnimationLibraryPath = AnimationFolder + "/UniversalAnimationLibrary.fbx";
+        private const string PostProcessingPath = "Assets/Sabotrix/Art/Lighting/BarPostProcessing.asset";
 
         // Quaternius models (see docs/credits.md). Index 0 is Player 1.
         private static readonly string[] PlayerModels = { "Man_Casual", "Woman_Casual" };
@@ -57,6 +60,11 @@ namespace Sabotrix.Editor
         private const float CardFanAngle = 10f;
         private const float CardFanSpacing = 0.05f;
 
+        // Glowing materials shine brighter than their base color so bloom picks them up.
+        private const float EmissionBoost = 2f;
+        private static readonly Color WarmLight = new Color(1f, 0.82f, 0.6f);
+        private static readonly Color TvLight = new Color(0.3f, 0.55f, 1f);
+
         // Fixed seed so the bottles come out the same on every rebuild.
         private const int BottleSeed = 7;
 
@@ -65,6 +73,7 @@ namespace Sabotrix.Editor
         {
             Directory.CreateDirectory(MaterialFolder);
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(PostProcessingPath));
             AssetDatabase.Refresh();
 
             GameObject root = new GameObject("Bar");
@@ -79,8 +88,11 @@ namespace Sabotrix.Editor
             BuildBarStools(root.transform);
             BuildBackBar(root.transform);
             BuildWallDecorations(root.transform);
+            BuildRoomLights(root.transform);
+            BuildPostProcessing(root.transform);
             BuildCameras(root.transform);
             root.AddComponent<CameraDirector>();
+            root.AddComponent<RoomLighting>();
             root.AddComponent<SeatedPlayers>();
             root.AddComponent<ResolveShow>();
 
@@ -177,6 +189,13 @@ namespace Sabotrix.Editor
             lightBox.localPosition = new Vector3(0, 2.4f, 0);
             Box("Box", lightBox, Vector3.zero, new Vector3(0.8f, 0.2f, 0.5f), GetMaterial("LightBox", new Color(1f, 0.85f, 0.55f), emissive: true));
             Cylinder("Chain", lightBox, new Vector3(0, (TrussHeight - 2.4f) / 2, 0), new Vector3(0.02f, (TrussHeight - 2.4f) / 2, 0.02f), GetMaterial("Chain", new Color(0.3f, 0.3f, 0.32f)));
+
+            // The only light that casts shadows: it lights the cards on the table.
+            Wire(lightBox.gameObject, LightGroup.Table);
+            Light spot = AddLight(lightBox.gameObject, LightType.Spot, new Vector3(0, 2.28f, 0), WarmLight, 6f, 4f);
+            spot.transform.rotation = Quaternion.Euler(90, 0, 0);
+            spot.spotAngle = 80;
+            spot.shadows = LightShadows.Soft;
         }
 
         // The beholder sculpture hanging on a chain. Beholder Drop swings it into the table.
@@ -194,9 +213,14 @@ namespace Sabotrix.Editor
         {
             Material screen = GetMaterial("TvScreen", new Color(0.25f, 0.55f, 1f), emissive: true);
             float backWall = RoomDepth / 2 - WallThickness;
-            Box("TV_1", parent, new Vector3(-2f, 2.9f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
-            Box("TV_2", parent, new Vector3(2f, 2.9f, backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
-            Box("TV_3", parent, new Vector3(0, 2.5f, -backWall), new Vector3(1.4f, 0.8f, 0.08f), screen);
+            Vector3[] tvPositions = { new Vector3(-2f, 2.9f, backWall), new Vector3(2f, 2.9f, backWall), new Vector3(0, 2.5f, -backWall) };
+            for (int i = 0; i < tvPositions.Length; i++)
+            {
+                // Each TV casts a little blue light into the room. TVs stay on during Blackout.
+                GameObject tv = Box($"TV_{i + 1}", parent, tvPositions[i], new Vector3(1.4f, 0.8f, 0.08f), screen);
+                Wire(tv, LightGroup.Tv);
+                AddLight(tv, LightType.Point, tvPositions[i] - new Vector3(0, 0, Mathf.Sign(tvPositions[i].z) * 0.5f), TvLight, 1.5f, 3.5f);
+            }
 
             // Breaker box on the right wall, near the table. Short Circuit sparks it.
             Box("BreakerBox", parent, new Vector3(RoomWidth / 2 - WallThickness, 1.5f, 0.8f), new Vector3(0.12f, 0.6f, 0.4f), GetMaterial("BreakerBox", new Color(0.35f, 0.38f, 0.35f)));
@@ -254,12 +278,12 @@ namespace Sabotrix.Editor
                 Cylinder($"EndTop_{i + 1}", counter, new Vector3(x, CounterHeight + 0.03f, 0), new Vector3(CounterDepth + 0.1f, 0.03f, CounterDepth + 0.1f), top);
             }
 
-            Box("NeonStrip", counter, new Vector3(0, 0.12f, -CounterDepth / 2 - 0.01f), new Vector3(CounterLength, 0.04f, 0.02f),
+            GameObject strip = Box("NeonStrip", counter, new Vector3(0, 0.12f, -CounterDepth / 2 - 0.01f), new Vector3(CounterLength, 0.04f, 0.02f),
                 GetMaterial("NeonWhite", new Color(0.9f, 0.95f, 1f), emissive: true));
+            Wire(strip, LightGroup.Room);
         }
 
         // Stools along the counter. Every other stool has a background patron: decoration only, not a player.
-        // The patrons are gray-box until M2.2 swaps in human models.
         private static void BuildBarStools(Transform parent)
         {
             Material seat = GetMaterial("StoolSeat", new Color(0.85f, 0.85f, 0.8f));
@@ -346,9 +370,9 @@ namespace Sabotrix.Editor
         private static void BuildWallDecorations(Transform parent)
         {
             float wallFace = RoomWidth / 2 - WallThickness / 2 - 0.02f;
-            Box("Neon_Pink", parent, new Vector3(-wallFace, 2.3f, 2.5f), new Vector3(0.04f, 0.6f, 1f), GetMaterial("NeonPink", new Color(1f, 0.3f, 0.8f), emissive: true));
-            Box("Neon_Yellow", parent, new Vector3(-wallFace, 2.3f, -3.2f), new Vector3(0.04f, 0.6f, 0.9f), GetMaterial("NeonYellow", new Color(1f, 0.85f, 0.2f), emissive: true));
-            Box("Neon_Green", parent, new Vector3(wallFace, 2.4f, 3.2f), new Vector3(0.04f, 0.5f, 1.1f), GetMaterial("NeonGreen", new Color(0.3f, 1f, 0.6f), emissive: true));
+            AddNeonSign("Neon_Pink", parent, new Vector3(-wallFace, 2.3f, 2.5f), new Vector3(0.04f, 0.6f, 1f), new Color(1f, 0.3f, 0.8f));
+            AddNeonSign("Neon_Yellow", parent, new Vector3(-wallFace, 2.3f, -3.2f), new Vector3(0.04f, 0.6f, 0.9f), new Color(1f, 0.85f, 0.2f));
+            AddNeonSign("Neon_Green", parent, new Vector3(wallFace, 2.4f, 3.2f), new Vector3(0.04f, 0.5f, 1.1f), new Color(0.3f, 1f, 0.6f));
 
             Material frame = GetMaterial("PictureFrame", new Color(0.08f, 0.08f, 0.08f));
             Material picture = GetMaterial("Picture", new Color(0.8f, 0.78f, 0.7f));
@@ -358,6 +382,104 @@ namespace Sabotrix.Editor
                 Box($"Frame_{i + 1}", parent, new Vector3(wallFace, 2.2f, frameZ[i]), new Vector3(0.04f, 0.6f, 0.45f), frame);
                 Box($"Picture_{i + 1}", parent, new Vector3(wallFace - 0.02f, 2.2f, frameZ[i]), new Vector3(0.02f, 0.48f, 0.35f), picture);
             }
+        }
+
+        // A glowing sign on a side wall that tints the wall around it.
+        private static void AddNeonSign(string name, Transform parent, Vector3 position, Vector3 size, Color color)
+        {
+            GameObject sign = Box(name, parent, position, size, GetMaterial(name.Replace("_", ""), color, emissive: true));
+            Wire(sign, LightGroup.Room);
+            AddLight(sign, LightType.Point, position - new Vector3(Mathf.Sign(position.x) * 0.3f, 0, 0), color, 1.5f, 2.5f);
+        }
+
+        // Warm lights for the rest of the room: pendant lamps over the bar counter, a glow behind the bottles,
+        // and dim fill from the ceiling. All on the Room switch, so Blackout turns them off.
+        private static void BuildRoomLights(Transform parent)
+        {
+            Material shade = GetMaterial("LampShade", new Color(0.1f, 0.1f, 0.1f));
+            Material bulb = GetMaterial("LampBulb", WarmLight, emissive: true);
+            Material chain = GetMaterial("Chain", new Color(0.3f, 0.3f, 0.32f));
+            const float lampHeight = 2.5f;
+            foreach (float x in new[] { -1.8f, 0f, 1.8f })
+            {
+                Transform lamp = Group($"Pendant_{x:0.0}", parent);
+                lamp.localPosition = new Vector3(x, lampHeight, CounterZ);
+                Cylinder("Shade", lamp, Vector3.zero, new Vector3(0.3f, 0.08f, 0.3f), shade);
+                Sphere("Bulb", lamp, new Vector3(0, -0.1f, 0), Vector3.one * 0.12f, bulb);
+                Cylinder("Chain", lamp, new Vector3(0, (RoomHeight - lampHeight) / 2, 0), new Vector3(0.02f, (RoomHeight - lampHeight) / 2, 0.02f), chain);
+                Wire(lamp.gameObject, LightGroup.Room);
+                AddLight(lamp.gameObject, LightType.Point, new Vector3(x, lampHeight - 0.15f, CounterZ), WarmLight, 2.5f, 4f);
+            }
+
+            Transform backBar = parent.Find("BackBar");
+            Wire(backBar.gameObject, LightGroup.Room);
+            AddLight(backBar.gameObject, LightType.Point, new Vector3(0, 1.6f, BackBarZ - 0.4f), new Color(1f, 0.92f, 0.8f), 1.5f, 2.5f);
+
+            Transform fill = Group("CeilingFill", parent);
+            Wire(fill.gameObject, LightGroup.Room);
+            foreach (Vector3 position in new[] { new Vector3(-2.5f, 3.4f, -2f), new Vector3(2.5f, 3.4f, -2f), new Vector3(0, 3.4f, 1f) })
+            {
+                AddLight(fill.gameObject, LightType.Point, position, WarmLight, 1.2f, 7f);
+            }
+        }
+
+        // Wires a glowing prop to one of the bar's light switches (see RoomLighting).
+        private static void Wire(GameObject prop, LightGroup group)
+        {
+            SerializedObject roomLight = new SerializedObject(prop.AddComponent<RoomLight>());
+            roomLight.FindProperty("_group").enumValueIndex = (int)group;
+            roomLight.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Adds a Light under a prop. The bar root sits at the origin while it's built, so world position = position in the bar.
+        private static Light AddLight(GameObject prop, LightType type, Vector3 position, Color color, float intensity, float range)
+        {
+            GameObject lightObject = new GameObject($"{type}Light");
+            lightObject.transform.SetParent(prop.transform, false);
+            lightObject.transform.position = position;
+
+            Light light = lightObject.AddComponent<Light>();
+            light.type = type;
+            light.color = color;
+            light.intensity = intensity;
+            light.range = range;
+            light.shadows = LightShadows.None;
+            return light;
+        }
+
+        // A global Volume: a little bloom so glowing things glow, and a vignette to darken the screen edges.
+        private static void BuildPostProcessing(Transform parent)
+        {
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessingPath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, PostProcessingPath);
+            }
+
+            Bloom bloom = GetOrAddEffect<Bloom>(profile);
+            bloom.threshold.Override(0.9f);
+            bloom.intensity.Override(0.8f);
+            Vignette vignette = GetOrAddEffect<Vignette>(profile);
+            vignette.intensity.Override(0.3f);
+            EditorUtility.SetDirty(profile);
+
+            Volume volume = Group("PostProcessing", parent).gameObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = profile;
+        }
+
+        // Effects are saved inside the profile asset, so they need adding to it once.
+        private static T GetOrAddEffect<T>(VolumeProfile profile) where T : VolumeComponent
+        {
+            if (profile.TryGet(out T effect))
+            {
+                return effect;
+            }
+
+            effect = profile.Add<T>();
+            AssetDatabase.AddObjectToAsset(effect, profile);
+            return effect;
         }
 
         // The seat cameras are built with the chairs. These are the other views.
@@ -461,7 +583,7 @@ namespace Sabotrix.Editor
             if (emissive)
             {
                 material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", color);
+                material.SetColor("_EmissionColor", color * EmissionBoost);
                 material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             }
 
