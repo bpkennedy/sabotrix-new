@@ -20,7 +20,7 @@
 | Playtest 3 | **Next** | |
 | M2.4 Dress the bar | Waiting on Malcolm's asset picks. Done after M2.5. | |
 | M2.5 Lighting | Done. Realtime lights wired to Room / Tv / Table switches (`RoomLighting`), dim warm ambient, bloom + vignette. TempLight removed. | |
-| M2.6 Blackout room effect | Not started | |
+| M2.6 Blackout room effect | Done. Cutaway to the light box, sparks, flicker, box drops and swings, room dark (TVs only) through the next round's picks. Checked with seed 5 (lands) and seed 3 (backfires). Overhead camera lowered to 1.9 m. | |
 | M2.7 Windows build | Not started | |
 | Playtest 4 | Not started | |
 

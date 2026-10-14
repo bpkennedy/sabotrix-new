@@ -77,6 +77,7 @@ Assets/Sabotrix/
                      SeatedPlayers (on the Bar): hides your own patron, shows the opponent's card backs
                      ResolveShow (on the Bar): replays LastRoundEvents over the table from the overhead camera
                      RoomLighting (on the Bar): light switches (Room, Tv, Table) for RoomLight props
+                     BlackoutEffect (on the Bar): Blackout's cutaway, sparks, falling light box, dark room
     Data/            CardData, HeroData, DeckData ScriptableObject types
     UI/              UiBuilder (uGUI helpers), MatchScreen, MenuScreen, MatchText
   Scripts/Editor/    Editor-only tools. Assembly Sabotrix.Editor

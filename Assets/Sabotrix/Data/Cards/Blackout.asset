@@ -27,3 +27,4 @@ MonoBehaviour:
   _sabotageAmount: 0
   _reversalChance: 0.35
   _reversalAmount: 0
+  _cutaway: 1

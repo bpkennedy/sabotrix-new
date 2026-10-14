@@ -39,6 +39,16 @@ namespace Sabotrix.Tests.EditMode
             }
         }
 
+        // GDD 10.4: only Blackout cuts the camera to its prop.
+        [TestCase("Blackout", true)]
+        [TestCase("ShortCircuit", false)]
+        [TestCase("BeholderDrop", false)]
+        [TestCase("SpilledDrink", false)]
+        public void CardAssets_SabotageCutaway_MatchesGdd(string cardName, bool cutaway)
+        {
+            Assert.That(Load<CardData>($"Cards/{cardName}").Cutaway, Is.EqualTo(cutaway));
+        }
+
         [TestCase("Bonk")]
         [TestCase("Pudge")]
         public void HeroAssets_StarterHeroes_MatchGdd(string heroName)

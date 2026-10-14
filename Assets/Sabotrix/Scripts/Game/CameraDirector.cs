@@ -10,6 +10,9 @@ namespace Sabotrix.Game
     {
         public const string Overhead = "Overhead";
 
+        // Matches the CinemachineBrain's default blend on the Main Camera (EaseInOut, 0.6 s).
+        public const float BlendSeconds = 0.6f;
+
         private readonly Dictionary<string, CinemachineCamera> _cameras = new Dictionary<string, CinemachineCamera>();
 
         private void Awake()

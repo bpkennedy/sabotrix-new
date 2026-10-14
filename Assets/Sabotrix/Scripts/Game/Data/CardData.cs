@@ -36,6 +36,11 @@ namespace Sabotrix.Game.Data
         [SerializeField, Range(0f, 1f)] private float _reversalChance;
         [Tooltip("Size of the effect when it backfires onto the player who played it.")]
         [SerializeField, Min(0)] private int _reversalAmount;
+        [Tooltip("The camera cuts to the prop this card affects while it resolves (GDD 7.6).")]
+        [SerializeField] private bool _cutaway;
+
+        // Presentation only, so it stays here instead of in the Core card definition.
+        public bool Cutaway => _cutaway;
 
         public CardDefinition ToDefinition() => new CardDefinition(
             name,

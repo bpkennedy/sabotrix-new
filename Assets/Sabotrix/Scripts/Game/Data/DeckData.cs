@@ -21,6 +21,7 @@ namespace Sabotrix.Game.Data
         [SerializeField] private List<Entry> _cards = new List<Entry>();
 
         public string DisplayName => _displayName;
+        public IEnumerable<CardData> Cards => _cards.Select(entry => entry.Card);
 
         public DeckDefinition ToDefinition()
         {

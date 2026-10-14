@@ -34,6 +34,9 @@ namespace Sabotrix.Game
         [Tooltip("The ResolveShow on the Bar. Plays each turn back over the table.")]
         [SerializeField] private ResolveShow _resolveShow;
 
+        [Tooltip("The BlackoutEffect on the Bar. Darkens the room when Blackout resolves.")]
+        [SerializeField] private BlackoutEffect _blackout;
+
         // Setup picks per player, as indexes into _heroes and _decks.
         private readonly int[] _heroPicks = { 0, 1 };
         private readonly int[] _deckPicks = { 0, 1 };
@@ -42,6 +45,7 @@ namespace Sabotrix.Game
         private MenuScreen _menu;
         private MatchScreen _matchScreen;
         private Match _match;
+        private HashSet<string> _cutawayCardIds;
         private CardInstance _revealedCard;
 
         private void Start()
@@ -50,6 +54,7 @@ namespace Sabotrix.Game
             _matchScreen = MatchScreen.Create();
             _matchScreen.CardClicked += OnCardClicked;
             _matchScreen.EndTurnClicked += OnEndTurnClicked;
+            _cutawayCardIds = new HashSet<string>(_decks.SelectMany(deck => deck.Cards).Where(card => card.Cutaway).Select(card => card.name));
 
             ShowTitle();
         }
@@ -100,6 +105,7 @@ namespace Sabotrix.Game
                 _heroes[_heroPicks[1]].ToDefinition(), _decks[_deckPicks[1]].ToDefinition(),
                 new SeededRandom(seed));
 
+            _blackout.Restore();
             _log.Clear();
             string firstPlayer = MatchText.PlayerName(_match, _match.ActivePlayer);
             AddLog($"Match start. {firstPlayer} picks first each round.");
@@ -189,7 +195,14 @@ namespace Sabotrix.Game
             _matchScreen.Hide();
             _seatedPlayers.Show(_match.Players, SeatedPlayers.NoneHidden);
             _cameras.Show(CameraDirector.Overhead);
-            yield return _resolveShow.Play(_match, hpBefore, blockBefore);
+
+            // The dark round after a Blackout has now resolved, so the lights come back on.
+            if (_blackout.IsDark)
+            {
+                _blackout.Restore();
+            }
+
+            yield return _resolveShow.Play(_match, hpBefore, blockBefore, _cutawayCardIds);
 
             if (_match.IsOver)
             {

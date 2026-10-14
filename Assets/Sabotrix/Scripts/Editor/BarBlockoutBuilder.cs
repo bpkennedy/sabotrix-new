@@ -93,6 +93,7 @@ namespace Sabotrix.Editor
             BuildCameras(root.transform);
             root.AddComponent<CameraDirector>();
             root.AddComponent<RoomLighting>();
+            root.AddComponent<BlackoutEffect>();
             root.AddComponent<SeatedPlayers>();
             root.AddComponent<ResolveShow>();
 
@@ -196,6 +197,7 @@ namespace Sabotrix.Editor
             spot.transform.rotation = Quaternion.Euler(90, 0, 0);
             spot.spotAngle = 80;
             spot.shadows = LightShadows.Soft;
+            BuildSparks(lightBox);
         }
 
         // The beholder sculpture hanging on a chain. Beholder Drop swings it into the table.
@@ -384,6 +386,51 @@ namespace Sabotrix.Editor
             }
         }
 
+        // Sparks that burst from the light box when Blackout smashes it (BlackoutEffect plays them).
+        private static void BuildSparks(Transform lightBox)
+        {
+            GameObject sparksObject = new GameObject("Sparks");
+            sparksObject.transform.SetParent(lightBox, false);
+            sparksObject.transform.localPosition = new Vector3(0, -0.12f, 0);
+
+            ParticleSystem sparks = sparksObject.AddComponent<ParticleSystem>();
+            sparks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ParticleSystem.MainModule main = sparks.main;
+            main.playOnAwake = false;
+            main.loop = false;
+            main.duration = 0.5f;
+            main.startLifetime = 0.7f;
+            main.startSpeed = 3f;
+            main.startSize = 0.03f;
+            main.startColor = new Color(1f, 0.85f, 0.4f);
+            main.gravityModifier = 1.5f;
+
+            ParticleSystem.EmissionModule emission = sparks.emission;
+            emission.rateOverTime = 0;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 60) });
+            ParticleSystem.ShapeModule shape = sparks.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.2f;
+
+            sparksObject.GetComponent<ParticleSystemRenderer>().sharedMaterial = GetSparkMaterial();
+        }
+
+        // Unlit and brighter than white, so the sparks glow through the bloom.
+        private static Material GetSparkMaterial()
+        {
+            string path = $"{MaterialFolder}/Sparks.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.SetColor("_BaseColor", new Color(3f, 2.4f, 1.2f));
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         // A glowing sign on a side wall that tints the wall around it.
         private static void AddNeonSign(string name, Transform parent, Vector3 position, Vector3 size, Color color)
         {
@@ -485,9 +532,9 @@ namespace Sabotrix.Editor
         // The seat cameras are built with the chairs. These are the other views.
         private static void BuildCameras(Transform parent)
         {
-            // Straight down at the table, below the light box. Player 1 is at the bottom of the screen.
+            // Straight down at the table, below the light box even after Blackout drops it. Player 1 is at the bottom of the screen.
             Transform overhead = Group(CameraDirector.Overhead, parent);
-            overhead.localPosition = new Vector3(0, 2.1f, 0);
+            overhead.localPosition = new Vector3(0, 1.9f, 0);
             overhead.localEulerAngles = new Vector3(90, 0, 0);
             AddCamera(overhead);
 

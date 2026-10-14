@@ -19,9 +19,6 @@ namespace Sabotrix.Game
         private const float RevealSeconds = 1f;
         private const float PhaseSeconds = 1.2f;
 
-        // Matches the CinemachineBrain's default blend, so the first step starts once the camera is overhead.
-        private const float CameraBlendSeconds = 0.6f;
-
         // World-space UI is sized in pixels, then scaled so 1 pixel = 1 millimeter.
         private const float PixelsToMeters = 0.001f;
         private const int CardWidth = 220;
@@ -48,9 +45,11 @@ namespace Sabotrix.Game
         private int[] _block;
         private bool _playing;
         private bool _skipped;
+        private BlackoutEffect _blackout;
 
         private void Awake()
         {
+            _blackout = GetComponent<BlackoutEffect>();
             Transform top = transform.Find("Table/Top");
             _tableTop = top.position + Vector3.up * top.lossyScale.y / 2;
             BuildOverlay();
@@ -67,7 +66,8 @@ namespace Sabotrix.Game
         }
 
         // hpBefore, blockBefore: each player's HP and Block before the round resolved, indexed like match.Players.
-        public IEnumerator Play(Match match, int[] hpBefore, int[] blockBefore)
+        // cutawayCardIds: cards whose room effect cuts the camera to the prop (CardData.Cutaway).
+        public IEnumerator Play(Match match, int[] hpBefore, int[] blockBefore, ICollection<string> cutawayCardIds)
         {
             _hp = (int[])hpBefore.Clone();
             _block = (int[])blockBefore.Clone();
@@ -78,7 +78,7 @@ namespace Sabotrix.Game
             _playing = true;
             _overlay.SetActive(true);
             UpdateHud(match);
-            yield return Wait(CameraBlendSeconds);
+            yield return Wait(CameraDirector.BlendSeconds);
 
             foreach (MatchEvent played in match.LastRoundEvents.Where(e => e.Kind == MatchEventKind.CardPlayed))
             {
@@ -92,6 +92,14 @@ namespace Sabotrix.Game
             {
                 ShowPhase(match, phase);
                 UpdateHud(match);
+
+                // Blackout's room effect plays whether it lands or backfires: the lights go out either way.
+                MatchEvent blackout = phase.FirstOrDefault(e => IsSabotageOutcome(e) && e.Card.Sabotage == SabotageKind.Blind);
+                if (blackout != null)
+                {
+                    yield return _blackout.Play(cutawayCardIds.Contains(blackout.Card.Id), () => _skipped);
+                }
+
                 yield return Wait(PhaseSeconds);
             }
 
@@ -195,6 +203,9 @@ namespace Sabotrix.Game
                 }
             }
         }
+
+        private static bool IsSabotageOutcome(MatchEvent matchEvent) =>
+            matchEvent.Kind == MatchEventKind.SabotageLanded || matchEvent.Kind == MatchEventKind.SabotageBackfired;
 
         private static string PhaseTitle(CardType phase)
         {
